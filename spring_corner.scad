@@ -1,3 +1,5 @@
+use <parametric_pulleys.scad>
+
 in = 25.4;
 
 motor_w = 42.3;
@@ -23,16 +25,19 @@ idler_inner_rad = idler_screw_rad+1.5;
 belt_thick = 2;
 belt_width = 6;
 
-//corner_mount(motor=true);
+corner_mount(motor=true);
 //corner_mount(motor=false);
 //magnet_mount();
 //drill_guide();
 //spring_roller();
-belt_clamp();
+//belt_clamp();
+//stacked_pulley();
 
 wall = 4;
 
 $fn=36;
+
+
 
 module belt_clamp(){
     belt_thick = belt_thick - .25;
@@ -50,13 +55,60 @@ module belt_clamp(){
         }
         
         //spring right next to belt
-        translate([0,-belt_thick/2,wall/2]) cube([length+1, .75, spring_height+.1], center=true);
+        translate([0,-belt_thick/2,wall/2]) cube([length+1, .666, spring_height+.1], center=true);
         
         //zip tie through the spring & around the top
-        translate([0,0,6-1.5]) rotate([0,90,0]) rotate_extrude(){
-            translate([6,0,0]) square([2,4], center=true);
+        translate([0,0,5+wall/2-.5]) scale([1,1.5,1]) rotate([0,90,0]) rotate_extrude(){
+            translate([5,0,0]) square([2,4], center=true);
         }
     }
+}
+
+//the bottom is a 20 tooth pulley, the top is a roller to
+//loosely hold the spring.  Main issue, the spring will
+//put significant torque on the motor, so it should be
+//as short as possible.
+//
+//Uses two M3 square nuts to hold on.
+module stacked_pulley(num_teeth = 20){
+    pulley_rad = spring_inner_rad+wall/2;
+    tooth_height = 6;
+    bottom_height = 8;
+    
+    echo(spring_inner_rad);
+    echo(pulley_rad);
+    
+    m3_rad = 1.7;
+    m3_nut_height = 2.5;
+    m3_nut_flat = 6;
+    m3_nut_rad = 6*sqrt(2)/2;
+    m5_rad = 5/2+.2;
+    
+    base_height = m3_nut_flat-.1;
+    
+    
+    
+    difference(){
+        union(){
+            //pulley on the bottom
+            pulley ( "GT2 2mm" , tooth_spacing (2,0.254) , 0.764 , 1.494, base_diameter=pulley_rad*2, base_height=bottom_height, toothed_part_length=tooth_height, belt_retainer=1, retainer_height=2);
+            
+            //angle up to the pulley rad
+            translate([0,0,tooth_height+bottom_height]){
+                //chamfer
+                cylinder(r1=6, r2=pulley_rad, h=wall-1);
+                translate([0,0,wall-1.05]) cylinder(r1=pulley_rad, r2=spring_inner_rad, h=1.1);
+                translate([0,0,wall]) cylinder(r=spring_inner_rad, h=spring_height+wall*1.5);
+                translate([0,0,spring_height+wall*2]) cylinder(r2=pulley_rad, r1=spring_inner_rad, h=wall*.5);
+            }
+        }
+    }
+}
+
+//basically the same as the stacked pulley, but with two
+//bearings in the top/bottom.
+module stacked_idler(){
+    
 }
 
 module spring_roller(roller_height=20){
@@ -202,9 +254,10 @@ module drill_guide(){
 }
 
 //modified motor mount - one corner is a belt guide
-module corner_mount(motor=true){
+module corner_mount(motor=true, belt_guide=false){
     screw_seat = 1;
-    spring_offset = motor_w;
+    spring_offset = 29;
+    spring_offset_y = motor_w/2-spring_outer_rad-wall/2;
 
     
     belt_guide_offset = motor_screw_sep/(sqrt(2));
@@ -216,19 +269,23 @@ module corner_mount(motor=true){
                 motor_mount(solid=1, screw_seat=0);
                 
                 //base for the spring mount
-                translate([spring_offset,0,0]) cylinder(r=spring_outer_rad+wall, h=wall);
+                translate([spring_offset,spring_offset_y,0]) cylinder(r=spring_outer_rad+wall/2, h=wall);
             }
-            hull(){
-                motor_mount(solid=1, screw_seat=0);
+            if(belt_guide == true){
+                hull(){
+                    motor_mount(solid=1, screw_seat=0);
                 
-                //base for the belt guide
-                rotate([0,0,-45]) translate([belt_guide_offset,0,0]) cylinder(r=belt_thick+wall, h=wall);
+                    //base for the belt guide
+                    rotate([0,0,-45]) translate([belt_guide_offset,0,0]) cylinder(r=belt_thick+wall, h=wall);
+                }
             }
             motor_mount(solid=1, screw_seat=screw_seat);
             
             //belt guide
-            rotate([0,0,-45]) translate([belt_guide_offset,0,wall-.1]) cylinder(r=belt_thick+wall, h=belt_width+wall+.1);
-            rotate([0,0,-45]) translate([belt_guide_offset,0,wall+belt_width+wall]) sphere(r=belt_thick+wall);
+            if(belt_guide == true){
+                rotate([0,0,-45]) translate([belt_guide_offset,0,wall-.1]) cylinder(r=belt_thick+wall, h=belt_width+wall+.1);
+                rotate([0,0,-45]) translate([belt_guide_offset,0,wall+belt_width+wall]) sphere(r=belt_thick+wall);
+            }
             
             //idler mount lift
             if(motor == false){
@@ -236,7 +293,7 @@ module corner_mount(motor=true){
             }
             
             //spring mount peg
-            translate([spring_offset,0,wall-.1]) cylinder(r1=spring_outer_rad+wall, r2=spring_outer_rad, h=spring_nut_height+.1);
+            translate([spring_offset,spring_offset_y,wall-.1]) cylinder(r1=spring_outer_rad+wall/2, r2=spring_outer_rad, h=spring_nut_height-wall/2);
         }
         
         //motor holes
@@ -248,11 +305,13 @@ module corner_mount(motor=true){
         }
         
         //belt hole
-        rotate([0,0,-45]) translate([belt_guide_offset,0,wall+(belt_width+wall)/2]) cube([(belt_thick+wall+.1)*2,belt_thick+.5,belt_width+wall/2], center=true);
+        if(belt_guide == true){
+            rotate([0,0,-45]) translate([belt_guide_offset,0,wall+(belt_width+wall)/2]) cube([(belt_thick+wall+.1)*2,belt_thick+.5,belt_width+wall/2], center=true);
+        }
         
         //spring holes
-        translate([spring_offset,0,-.2]) cylinder(r1=spring_nut_rad+.125, r2=spring_nut_rad, h=spring_nut_height, $fn=6);
-        translate([spring_offset,0,spring_nut_height]) cylinder(r=spring_screw_rad, h=wall*2);
+        translate([spring_offset,spring_offset_y,-.2]) cylinder(r1=spring_nut_rad+.125, r2=spring_nut_rad, h=spring_nut_height, $fn=6);
+        translate([spring_offset,spring_offset_y,spring_nut_height]) cylinder(r=spring_screw_rad, h=wall*2);
     }
 }
 
