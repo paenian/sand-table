@@ -1,4 +1,5 @@
 in = 25.4;
+
 motor_w = 42.3;
 motor_rad = 26.25;
 motor_screw_sep = 31;
@@ -6,15 +7,82 @@ motor_screw_rad = 3.33/2;
 motor_screw_cap_rad = 3.33;
 motor_center_rad = 13;
 
-spring_inner_rad = 10;
-spring_outer_rad = 13;
+spring_inner_rad = 18/2;
+spring_outer_rad = 22/2;
+spring_height = 13;
 
-magnet_mount();
+spring_nut_rad = 15/2;
+spring_nut_height = 7;
+spring_screw_rad = 8.7/2;
+    
+idler_screw_rad = 5/2+.2;
+idler_lift = 3;
+idler_inner_rad = idler_screw_rad+1.5;
+    
+    
+belt_thick = 2;
+belt_width = 6;
 
-wall = 3;
+//corner_mount(motor=true);
+//corner_mount(motor=false);
+//magnet_mount();
+//drill_guide();
+//spring_roller();
+belt_clamp();
+
+wall = 4;
 
 $fn=36;
 
+module belt_clamp(){
+    belt_thick = belt_thick - .25;
+    length = 20;
+    difference(){
+        union(){
+            //body
+            cube([length,wall*2,wall+spring_height], center=true);
+        }
+        
+        //belt clamp up top
+        translate([0,0,spring_height/4+wall/2]) difference(){
+            cube([length+1, belt_thick, spring_height/2+.1], center=true);
+            for(i=[-length-1:2:length]) translate([i,belt_thick/2,0]) cube([1,belt_thick,spring_height/2+.3], center=true);
+        }
+        
+        //spring right next to belt
+        translate([0,-belt_thick/2,wall/2]) cube([length+1, .75, spring_height+.1], center=true);
+        
+        //zip tie through the spring & around the top
+        translate([0,0,6-1.5]) rotate([0,90,0]) rotate_extrude(){
+            translate([6,0,0]) square([2,4], center=true);
+        }
+    }
+}
+
+module spring_roller(roller_height=20){
+    roller_rad = spring_inner_rad+wall-2;
+    
+    spring_inner_rad = spring_inner_rad-.25;    //add a little extra slop
+    difference(){
+        union(){
+            cylinder(r=roller_rad, h=roller_height);
+        }
+        
+        translate([0,0,roller_height/2]) difference(){
+            
+            %cylinder(r=20, h=spring_height, center=true);
+            
+            rotate_extrude(){
+                translate([spring_inner_rad+wall/2+.1,0,0]) square([wall+.2, spring_height+wall*2], center=true);
+            }
+            
+            //chamfer top and bottom
+            for(i=[0,1]) mirror([0,0,i]) translate([0,0,-(spring_height+wall*2)/2-.1]) cylinder(r1=spring_inner_rad+wall, r2=spring_inner_rad, h=wall+.1);
+        }
+        
+        translate([0,0,-.1]) cylinder(r=spring_screw_rad+.2, h=roller_height+.2);
+    }
+}
 
 module magnet_mount(){
     magnet_len = in*.5;
@@ -87,7 +155,6 @@ module magnet_mount(){
         }
     }
 }
-
 module motor_mount(solid=1, screw_seat=1){
     
     //%cube([motor_w, motor_w, .1], center=true);
@@ -115,21 +182,32 @@ module motor_mount(solid=1, screw_seat=1){
     }
 }
 
+module drill_guide(){
+    difference(){
+        union(){
+            hull(){
+                motor_mount();
+                for(i=[0,90]) rotate([0,0,i]) translate([0,-motor_w/2-wall/2-.1,wall/2]) cube([motor_w, wall, wall], center=true);
+            }
+            
+            for(i=[0,90]) rotate([0,0,i]) translate([0,-motor_w/2-wall/2-.1,wall]) cube([motor_w-1, wall, wall*2], center=true);
+        }
+        difference(){
+            scale([1,1,2]) motor_mount(solid=-1);
+            for(i=[0:120:359]) rotate([0,0,i]) translate([motor_center_rad/2, 0, 0]) cube([motor_center_rad*1.1, wall*2, wall*3], center=true);
+        }
+        
+        cylinder(r=idler_screw_rad, h=wall*3, center=true);
+    }
+}
+
 //modified motor mount - one corner is a belt guide
-module corner_mount(){
+module corner_mount(motor=true){
     screw_seat = 1;
     spring_offset = motor_w;
-    spring_height = 12;
+
     
-    belt_guide_offset = motor_screw_sep;
-    
-    spring_nut_rad = 8;
-    spring_nut_height = 4;
-    spring_screw_rad = 5.3/2;
-    
-    
-    belt_thick = 2;
-    belt_width = 6;
+    belt_guide_offset = motor_screw_sep/(sqrt(2));
     
     difference(){
         union(){
@@ -138,7 +216,7 @@ module corner_mount(){
                 motor_mount(solid=1, screw_seat=0);
                 
                 //base for the spring mount
-                translate([spring_offset,0,0]) cylinder(r=spring_inner_rad+wall, h=wall);
+                translate([spring_offset,0,0]) cylinder(r=spring_outer_rad+wall, h=wall);
             }
             hull(){
                 motor_mount(solid=1, screw_seat=0);
@@ -152,24 +230,33 @@ module corner_mount(){
             rotate([0,0,-45]) translate([belt_guide_offset,0,wall-.1]) cylinder(r=belt_thick+wall, h=belt_width+wall+.1);
             rotate([0,0,-45]) translate([belt_guide_offset,0,wall+belt_width+wall]) sphere(r=belt_thick+wall);
             
+            //idler mount lift
+            if(motor == false){
+                translate([0,0,wall-.1]) cylinder(r1=idler_inner_rad+wall, r2=idler_inner_rad, h=idler_lift+.1);
+            }
+            
             //spring mount peg
-            translate([spring_offset,0,wall-.1]) cylinder(r1=spring_inner_rad+wall, r2=spring_inner_rad, h=spring_nut_height+.1);
+            translate([spring_offset,0,wall-.1]) cylinder(r1=spring_outer_rad+wall, r2=spring_outer_rad, h=spring_nut_height+.1);
         }
         
         //motor holes
-        motor_mount(solid=0, screw_seat=screw_seat);
+        if(motor == true){
+            motor_mount(solid=0, screw_seat=screw_seat);
+        }else{
+            motor_mount(solid=0, screw_seat=screw_seat, motor_center_rad = idler_screw_rad);
+            translate([0,0,-.1]) cylinder(r=idler_screw_rad, h=wall*4);
+        }
         
         //belt hole
         rotate([0,0,-45]) translate([belt_guide_offset,0,wall+(belt_width+wall)/2]) cube([(belt_thick+wall+.1)*2,belt_thick+.5,belt_width+wall/2], center=true);
         
         //spring holes
-        translate([spring_offset,0,-.1]) cylinder(r1=spring_nut_rad+.125, r2=spring_nut_rad, h=spring_nut_height, $fn=6);
+        translate([spring_offset,0,-.2]) cylinder(r1=spring_nut_rad+.125, r2=spring_nut_rad, h=spring_nut_height, $fn=6);
         translate([spring_offset,0,spring_nut_height]) cylinder(r=spring_screw_rad, h=wall*2);
     }
 }
 
 module corner_mount_spring(){
-    
 }
 
 module corner_mount_weight(){
