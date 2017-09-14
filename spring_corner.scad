@@ -16,18 +16,27 @@ spring_height = 13;
 spring_nut_rad = 15/2;
 spring_nut_height = 7;
 spring_screw_rad = 8.7/2;
-    
+
 idler_screw_rad = 5/2+.2;
+idler_screw_cap_rad = 5;
+idler_screw_nut_rad = 9/2+.2;
 idler_lift = 3;
 idler_inner_rad = idler_screw_rad+1.5;
-    
+
+/////These are guesses!
+    idler_height = 12;
+    idler_rad = 16/2;
+    idler_flange_rad = 9.1;
     
 belt_thick = 2;
 belt_width = 6;
 
-corner_mount(motor=true);
+spring = 1;
+weight = 2;
+
+//corner_mount(motor=false, tensioner = weight);
 //corner_mount(motor=false);
-//magnet_mount();
+magnet_mount();
 //drill_guide();
 //spring_roller();
 //belt_clamp();
@@ -37,7 +46,13 @@ wall = 4;
 
 $fn=36;
 
-
+//clear pipe to stick it in
+pipe_id = 2.067*in/2;
+pipe_od = 2.375*in/2;
+%difference(){
+    cylinder(r=pipe_od, h=50);
+    translate([0,0,-.1]) cylinder(r=pipe_id, h=51);
+}
 
 module belt_clamp(){
     belt_thick = belt_thick - .25;
@@ -138,30 +153,26 @@ module spring_roller(roller_height=20){
 
 module magnet_mount(){
     magnet_len = in*.5;
-    magnet_rad = (5/16*in)/2 + .2;
+    magnet_rad = (1/2*in)/2 + .2;
     
     
     
     belt_thick = 2;
     belt_width = 6.5;
     
-    belt_offset = 11;
-    base_offset = 19;
+    belt_offset = 13;
+    base_offset = 23;
     belt_lift = 10; //this is specifically to lift the belt up, to counteract gravity pulling the carriage down.  Not sure it's worth the effort, though.
     
     
     //neopixel 16x ring
-    led_rad = 32/2;
-    led_thick = 7;
-    led_width = (44.5-31.7)/2+.25;
+    led_outer_rad = 46/2;
+    led_inner_rad = 30/2;
+    led_height = 5;
     
     //cylinder(r=led_rad, h=50);
     
-    //led ring?
-    %translate([0,0,wall]) 
-    rotate_extrude(){
-        translate([led_rad,0,0]) square([led_width,led_thick]);
-    }
+    base_thick=led_height+wall/2;
     
     
     difference(){
@@ -169,9 +180,9 @@ module magnet_mount(){
             //base()
             for(j=[0,90]) rotate([0,0,j]) hull() for(i=[0,1]) mirror([i,0,0]) translate([base_offset,0,0]) scale([.5,1,1]) {
                
-                cylinder(r1=magnet_rad+wall*1.5, r2=magnet_rad+wall*2, h=wall/3);
-                translate([0,0,wall/3-.01]) cylinder(r=magnet_rad+wall*2, h=wall/3+.01);
-                translate([0,0,wall*2/3-.01]) cylinder(r1=magnet_rad+wall*2, r2=magnet_rad+wall*1.5, h=wall/3+.01);
+                cylinder(r1=magnet_rad+wall*1.5, r2=magnet_rad+wall*2, h=base_thick/3);
+                translate([0,0,base_thick/3-.01]) cylinder(r=magnet_rad+wall*2, h=base_thick/3+.01);
+                translate([0,0,base_thick*2/3-.01]) cylinder(r1=magnet_rad+wall*2, r2=magnet_rad+wall*1.5, h=base_thick/3+.01);
             }
         
             //magnet
@@ -186,7 +197,7 @@ module magnet_mount(){
         
         //magnet
         translate([0,0,-.1]) cylinder(r1=magnet_rad+1, r2=magnet_rad, h=1);
-        translate([0,0,-.1]) cylinder(r1=magnet_rad+.2, r2=magnet_rad, h=magnet_len+.2);
+        translate([0,0,-.1]) cylinder(r1=magnet_rad+.2, r2=magnet_rad, h=magnet_len+.5);
         translate([0,0,magnet_len]) cube([magnet_rad*2+wall*1.25,magnet_rad,wall*2+.1], center=true);
         
         //belt cutout
@@ -201,9 +212,15 @@ module magnet_mount(){
             }
             
             //zip tie slot
-            translate([0,0,belt_lift]) rotate([90,0,0]) rotate_extrude(){
-                translate([magnet_len/2+1.5,0,0]) square([2,4], center=true);
+            translate([0,0,belt_lift+2.5]) rotate([90,0,0]) scale([2,1,1]) rotate_extrude(){
+                translate([(belt_width+wall)/2,0,0]) square([2,4], center=true);
             }
+        }
+        
+        //led ring underneath
+        translate([0,0,-.1]) difference(){
+            cylinder(r=led_outer_rad, h=led_height);
+            cylinder(r=led_inner_rad, h=led_height*3, center=true);
         }
     }
 }
@@ -229,8 +246,10 @@ module motor_mount(solid=1, screw_seat=1){
         translate([0,0,-.1]) cylinder(r=motor_center_rad, h=wall+.2);
         
         //screw holes
-        for(i=[0:1]) for(j=[0:1]) mirror([i,0,0]) mirror([0,j,0])
-                translate([motor_screw_sep/2,motor_screw_sep/2,-.1]) cylinder(r=motor_screw_rad, h=wall+screw_seat+.2);
+        for(i=[0:1]) for(j=[0:1]) mirror([i,0,0]) mirror([0,j,0]){
+            translate([motor_screw_sep/2,motor_screw_sep/2,-.1]) cylinder(r=motor_screw_rad, h=wall+screw_seat+.2);
+            translate([motor_screw_sep/2,motor_screw_sep/2,wall+screw_seat]) cylinder(r=motor_screw_cap_rad, h=wall+screw_seat+.2);
+        }
     }
 }
 
@@ -253,24 +272,75 @@ module drill_guide(){
     }
 }
 
+module weighted_tensioner(solid=1){
+    if(solid==1){
+        for(i=[0:1]) mirror([0,i,0]) translate([0,idler_height/2,idler_flange_rad+.5]){
+            hull(){
+                rotate([-90,0,0]) cylinder(r=idler_rad, h=wall);
+                translate([0,wall/2,-idler_rad/2]) cube([idler_rad*2,wall,wall], center=true);
+            }
+            hull(){
+                translate([0,wall/2,-idler_rad+wall/2]) cube([idler_rad*2,wall,wall], center=true);
+                translate([0,wall,-idler_rad]) cube([idler_rad*2,wall+3,.1], center=true);
+            }
+        }
+    }
+    
+    if(solid<=0){
+        //axle cutout
+        translate([0,0,idler_flange_rad+.5]) rotate([-90,0,0]) cylinder(r=idler_screw_rad, h=idler_height*3, center=true);
+        mirror([0,1,0]) translate([0,idler_height/2+wall-1,idler_flange_rad+.5]) rotate([-90,0,0]) cylinder(r1=idler_screw_cap_rad, r2=idler_screw_cap_rad+1, h=wall);
+        translate([0,idler_height/2+wall-1,idler_flange_rad+.5]) rotate([-90,0,0]) rotate([0,0,30]) cylinder(r1=idler_screw_nut_rad, r2=idler_screw_nut_rad+1, h=wall, $fn=6);
+        
+        //pulley cutout
+        hull(){
+            translate([0,0,idler_flange_rad+.5]) rotate([-90,0,0]) cylinder(r=idler_flange_rad+.6, h=idler_height, center=true);
+            translate([10,0,idler_flange_rad+.5]) rotate([-90,0,0]) cylinder(r=idler_flange_rad+.6, h=idler_height, center=true);
+        }
+    }
+}
+
 //modified motor mount - one corner is a belt guide
-module corner_mount(motor=true, belt_guide=false){
+module corner_mount(motor=true, belt_guide=false, belt_retainer=true, tensioner = spring){
     screw_seat = 1;
+    
+    pulley_rad = 12/2;
+    pulley_height = 18;
+    pulley_base_height = 7.5;
+    %cylinder(r=pulley_rad, h=pulley_height);
+    %cylinder(r=pulley_rad+wall/2, h=pulley_base_height);
+    
+    //for the spring tensioner
     spring_offset = 29;
     spring_offset_y = motor_w/2-spring_outer_rad-wall/2;
-
+    
+    //for the weight tensioner
+    weight_offset = 23;
+    weight_y_offset = pulley_rad/2;
     
     belt_guide_offset = motor_screw_sep/(sqrt(2));
+
     
     difference(){
         union(){
-            //base
+            //baseplate
             hull(){
                 motor_mount(solid=1, screw_seat=0);
                 
-                //base for the spring mount
-                translate([spring_offset,spring_offset_y,0]) cylinder(r=spring_outer_rad+wall/2, h=wall);
+                if(tensioner == spring){
+                    //base for the spring mount
+                    translate([spring_offset,spring_offset_y,0]) cylinder(r=spring_outer_rad+wall/2, h=wall);
+                }
+                
+                //weighted tensioner base
+                if(tensioner == weight){
+                    linear_extrude(height=wall)
+                    projection(cut=false){
+                        translate([weight_offset,weight_y_offset,0]) weighted_tensioner();
+                    }
+                }
             }
+            
             if(belt_guide == true){
                 hull(){
                     motor_mount(solid=1, screw_seat=0);
@@ -279,6 +349,7 @@ module corner_mount(motor=true, belt_guide=false){
                     rotate([0,0,-45]) translate([belt_guide_offset,0,0]) cylinder(r=belt_thick+wall, h=wall);
                 }
             }
+            
             motor_mount(solid=1, screw_seat=screw_seat);
             
             //belt guide
@@ -293,7 +364,23 @@ module corner_mount(motor=true, belt_guide=false){
             }
             
             //spring mount peg
-            translate([spring_offset,spring_offset_y,wall-.1]) cylinder(r1=spring_outer_rad+wall/2, r2=spring_outer_rad, h=spring_nut_height-wall/2);
+            if(tensioner == spring){
+                translate([spring_offset,spring_offset_y,wall-.1]) cylinder(r1=spring_outer_rad+wall/2, r2=spring_outer_rad, h=spring_nut_height-wall/2);
+            }
+            
+            //weighted tensioner
+            if(tensioner == weight){
+                translate([weight_offset,weight_y_offset,0]) weighted_tensioner();
+                
+                //belt attach on the other side
+                translate([-motor_screw_sep/2,weight_y_offset,0]) difference(){
+                    hull(){
+                        #translate([0,0,wall]) rotate([90,0,0]) cylinder(r=belt_thick+1, h=belt_width+wall*3, center=true);
+                        translate([0,0,wall+belt_thick*3]) rotate([90,0,0]) cylinder(r=belt_thick, h=belt_width+wall*2, center=true);
+                    }
+                    translate([0,0,wall+belt_thick]) cube([10,belt_width+1,belt_thick*2], center=true);
+                }
+            }
         }
         
         //motor holes
@@ -310,8 +397,15 @@ module corner_mount(motor=true, belt_guide=false){
         }
         
         //spring holes
-        translate([spring_offset,spring_offset_y,-.2]) cylinder(r1=spring_nut_rad+.125, r2=spring_nut_rad, h=spring_nut_height, $fn=6);
-        translate([spring_offset,spring_offset_y,spring_nut_height]) cylinder(r=spring_screw_rad, h=wall*2);
+        if(tensioner == spring){
+            translate([spring_offset,spring_offset_y,-.2]) cylinder(r1=spring_nut_rad+.125, r2=spring_nut_rad, h=spring_nut_height, $fn=6);
+            translate([spring_offset,spring_offset_y,spring_nut_height]) cylinder(r=spring_screw_rad, h=wall*2);
+        }
+        
+        //weighted tensioner
+        if(tensioner == weight){
+            translate([weight_offset,weight_y_offset,0]) weighted_tensioner(solid = -1);
+        }
     }
 }
 
