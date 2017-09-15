@@ -149,7 +149,7 @@
 
 #if MOTHERBOARD == 2
 #include <Wire.h>
-#include <Adafruit_MotorShield.h>
+#include "Adafruit_MotorShield/Adafruit_MotorShield.h"
 #endif
 
 // Default servo library
