@@ -81,9 +81,9 @@
 // 2.5132741228718345 / 200 = 0.0125663706 thread moved each step.
 // NEMA17 are rated up to 3000RPM.  Adafruit can handle >1000RPM.
 // These numbers directly affect the maximum velocity.
-#define MAX_STEPS_S     (STEPS_PER_TURN*MAX_RPM/60.0)  // steps/s
+//#define MAX_STEPS_S     (STEPS_PER_TURN*MAX_RPM/60.0)  // steps/s
 
-#define MAX_FEEDRATE    (10000.0)
+#define MAX_FEEDRATE    (1000000.0)
 #define MIN_FEEDRATE    (1.0) // steps / second
 
 // for arc directions
@@ -149,7 +149,7 @@
 
 #if MOTHERBOARD == 2
 #include <Wire.h>
-#include "Adafruit_MotorShield/Adafruit_MotorShield.h"
+#include <Adafruit_MotorShield.h>
 #endif
 
 // Default servo library
@@ -988,6 +988,8 @@ void processConfig() {
   char j=parseNumber('J',0);
 
   adjustInversions(i,j);
+
+  adjustDimensions(limit_top, limit_bottom, limit_right, limit_left);
 
   // @TODO: check t>b, r>l ?
   printConfig();
