@@ -112,4 +112,10 @@ void system_convert_array_steps_to_mpos(float *position, int32_t *steps);
   int32_t system_convert_corexy_to_y_axis_steps(int32_t *steps);
 #endif
 
+// PolarY calculation only. Returns x or y-axis "steps" based on CoreXY motor steps.
+#ifdef POLARXY
+  int32_t system_convert_polarxy_to_x_axis_steps(int32_t *steps);
+  int32_t system_convert_polarxy_to_y_axis_steps(int32_t *steps);
+#endif
+
 #endif

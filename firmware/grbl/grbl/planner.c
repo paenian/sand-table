@@ -281,6 +281,14 @@ uint8_t plan_check_full_buffer()
     block->steps[B_MOTOR] = labs((target_steps[X_AXIS]-pl.position[X_AXIS]) - (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
   #endif
 
+  //TODO: Check that this logic is correct for polar.  I don't think it is.
+  #ifdef POLARXY
+    target_steps[A_MOTOR] = lround(target[A_MOTOR]*settings.steps_per_mm[A_MOTOR]);
+    target_steps[B_MOTOR] = lround(target[B_MOTOR]*settings.steps_per_mm[B_MOTOR]);
+    block->steps[A_MOTOR] = labs((target_steps[X_AXIS]-pl.position[X_AXIS]) + (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
+    block->steps[B_MOTOR] = labs((target_steps[X_AXIS]-pl.position[X_AXIS]) - (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
+  #endif
+
   for (idx=0; idx<N_AXIS; idx++) {
     // Calculate target position in absolute steps, number of steps for each axis, and determine max step events.
     // Also, compute individual axes distance for move and prep unit vector calculations.
@@ -298,11 +306,32 @@ uint8_t plan_check_full_buffer()
       } else {
         delta_mm = (target_steps[idx] - pl.position[idx])/settings.steps_per_mm[idx];
       }
-    #else
-      target_steps[idx] = lround(target[idx]*settings.steps_per_mm[idx]);
-      block->steps[idx] = labs(target_steps[idx]-pl.position[idx]);
+    #endif
+
+    //TODO: Check that this logic is correct for polar.  I don't think it is.
+    #ifdef POLARXY
+      if ( !(idx == A_MOTOR) && !(idx == B_MOTOR) ) {
+        target_steps[idx] = lround(target[idx]*settings.steps_per_mm[idx]);
+        block->steps[idx] = labs(target_steps[idx]-pl.position[idx]);
+      }
       block->step_event_count = max(block->step_event_count, block->steps[idx]);
-      delta_mm = (target_steps[idx] - pl.position[idx])/settings.steps_per_mm[idx];
+      if (idx == A_MOTOR) {
+        delta_mm = (target_steps[X_AXIS]-pl.position[X_AXIS] + target_steps[Y_AXIS]-pl.position[Y_AXIS])/settings.steps_per_mm[idx];
+      } else if (idx == B_MOTOR) {
+        delta_mm = (target_steps[X_AXIS]-pl.position[X_AXIS] - target_steps[Y_AXIS]+pl.position[Y_AXIS])/settings.steps_per_mm[idx];
+      } else {
+        delta_mm = (target_steps[idx] - pl.position[idx])/settings.steps_per_mm[idx];
+      }
+    #endif
+
+   
+    #ifndef COREXY
+      #ifndef POLARXY
+        target_steps[idx] = lround(target[idx]*settings.steps_per_mm[idx]);
+        block->steps[idx] = labs(target_steps[idx]-pl.position[idx]);
+        block->step_event_count = max(block->step_event_count, block->steps[idx]);
+        delta_mm = (target_steps[idx] - pl.position[idx])/settings.steps_per_mm[idx];
+      #endif
     #endif
     unit_vec[idx] = delta_mm; // Store unit vector numerator. Denominator computed later.
         
@@ -431,8 +460,22 @@ void plan_sync_position()
       } else {
         pl.position[idx] = sys.position[idx];
       }
-    #else
-      pl.position[idx] = sys.position[idx];
+    #endif
+
+    #ifdef POLARXY
+     if (idx==X_AXIS) { 
+        pl.position[X_AXIS] = system_convert_polarxy_to_x_axis_steps(sys.position);
+      } else if (idx==Y_AXIS) { 
+        pl.position[Y_AXIS] = system_convert_polarxy_to_y_axis_steps(sys.position);
+      } else {
+        pl.position[idx] = sys.position[idx];
+      }
+    #endif
+
+    #ifndef COREXY
+      #ifndef POLARXY
+        pl.position[idx] = sys.position[idx];
+      #endif
     #endif
   }
 }

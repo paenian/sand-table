@@ -160,6 +160,10 @@ void limits_go_home(uint8_t cycle_mask)
     #ifdef COREXY    
       if ((idx==A_MOTOR)||(idx==B_MOTOR)) { step_pin[idx] = (get_step_pin_mask(X_AXIS)|get_step_pin_mask(Y_AXIS)); } 
     #endif
+	
+    #ifdef POLARXY    
+      if ((idx==A_MOTOR)||(idx==B_MOTOR)) { step_pin[idx] = (get_step_pin_mask(X_AXIS)|get_step_pin_mask(Y_AXIS)); } 
+    #endif
 
     if (bit_istrue(cycle_mask,bit(idx))) { 
       // Set target based on max_travel setting. Ensure homing switches engaged with search scalar.
@@ -195,8 +199,25 @@ void limits_go_home(uint8_t cycle_mask)
           } else { 
             sys.position[Z_AXIS] = 0; 
           }
-        #else
-          sys.position[idx] = 0;
+        #endif
+		
+        #ifdef POLARXY
+          if (idx == X_AXIS) {
+            int32_t axis_position = system_convert_polarxy_to_y_axis_steps(sys.position);
+            sys.position[A_MOTOR] = axis_position;
+            sys.position[B_MOTOR] = -axis_position;
+          } else if (idx == Y_AXIS) {
+            int32_t axis_position = system_convert_polarxy_to_x_axis_steps(sys.position);
+            sys.position[A_MOTOR] = sys.position[B_MOTOR] = axis_position;
+          } else { 
+            sys.position[Z_AXIS] = 0; 
+          }
+        #endif
+		
+        #ifndef COREXY
+          #ifndef POLARXY		
+            sys.position[idx] = 0;
+	  #endif
         #endif
         // Set target direction based on cycle mask and homing cycle approach state.
         // NOTE: This happens to compile smaller than any other implementation tried.
@@ -236,8 +257,17 @@ void limits_go_home(uint8_t cycle_mask)
               #ifdef COREXY
                 if (idx==Z_AXIS) { axislock &= ~(step_pin[Z_AXIS]); }
                 else { axislock &= ~(step_pin[A_MOTOR]|step_pin[B_MOTOR]); }
-              #else
-                axislock &= ~(step_pin[idx]); 
+              #endif
+			  
+              #ifdef POLARXY
+                if (idx==Z_AXIS) { axislock &= ~(step_pin[Z_AXIS]); }
+                else { axislock &= ~(step_pin[A_MOTOR]|step_pin[B_MOTOR]); }
+              #endif
+			  
+              #ifndef COREXY
+                #ifndef POLARXY
+                  axislock &= ~(step_pin[idx]); 
+                #endif
               #endif
             }
           }
@@ -317,8 +347,26 @@ void limits_go_home(uint8_t cycle_mask)
         } else {
           sys.position[idx] = set_axis_position;
         }        
-      #else 
-        sys.position[idx] = set_axis_position;
+      #endif
+	  
+      #ifdef POLARXY    
+        if (idx==X_AXIS) { 
+          int32_t off_axis_position = system_convert_polarxy_to_y_axis_steps(sys.position);
+          sys.position[A_MOTOR] = set_axis_position + off_axis_position;
+          sys.position[B_MOTOR] = set_axis_position - off_axis_position;          
+        } else if (idx==Y_AXIS) {
+          int32_t off_axis_position = system_convert_polarxy_to_x_axis_steps(sys.position);
+          sys.position[A_MOTOR] = off_axis_position + set_axis_position;
+          sys.position[B_MOTOR] = off_axis_position - set_axis_position;
+        } else {
+          sys.position[idx] = set_axis_position;
+        }        
+      #endif
+	  
+      #ifndef COREXY
+        #ifndef POLARXY
+          sys.position[idx] = set_axis_position;
+        #endif
       #endif
 
     }

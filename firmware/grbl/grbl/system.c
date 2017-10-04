@@ -271,9 +271,25 @@ float system_convert_axis_steps_to_mpos(int32_t *steps, uint8_t idx)
     } else {
       pos = steps[idx]/settings.steps_per_mm[idx];
     }
-  #else
-    pos = steps[idx]/settings.steps_per_mm[idx];
   #endif
+  
+  #ifdef POLARXY
+    if (idx==X_AXIS) { 
+      pos = (float)system_convert_polarxy_to_x_axis_steps(steps) / settings.steps_per_mm[A_MOTOR];
+    } else if (idx==Y_AXIS) {
+      pos = (float)system_convert_polarxy_to_y_axis_steps(steps) / settings.steps_per_mm[B_MOTOR];
+    } else {
+      pos = steps[idx]/settings.steps_per_mm[idx];	//z move, no need to bother
+    }
+  #endif
+  
+  #ifndef COREXY
+    #ifndef POLARXY
+      pos = steps[idx]/settings.steps_per_mm[idx];
+	#endif
+  #endif
+  
+  
   return(pos);
 }
 
@@ -300,3 +316,22 @@ void system_convert_array_steps_to_mpos(float *position, int32_t *steps)
   }
 #endif
 
+// PolarXY calculation only. Returns x or y-axis "steps" based on PolarXY motor steps.
+#ifdef POLARXY
+  int32_t system_convert_polarxy_to_x_axis_steps(int32_t *steps)
+  {
+	double dist = settings.max_travel[X_AXIS];
+	
+	double angle = acos(((double)((steps[A_MOTOR]*steps[A_MOTOR]) + (steps[B_MOTOR]*steps[B_MOTOR]) - (dist*dist))) / ((double)(2 * steps[A_MOTOR] * steps[B_MOTOR])));	
+	
+    return( steps[A_MOTOR] * cos(angle) );
+  }
+  int32_t system_convert_polarxy_to_y_axis_steps(int32_t *steps)
+  {
+	double dist = settings.max_travel[X_AXIS];
+	
+	double angle = acos(((double)((steps[A_MOTOR]*steps[A_MOTOR]) + (steps[B_MOTOR]*steps[B_MOTOR]) - (dist*dist))) / ((double)(2 * steps[A_MOTOR] * steps[B_MOTOR])));
+
+    return( steps[A_MOTOR] * sin(angle) );
+  }
+#endif
