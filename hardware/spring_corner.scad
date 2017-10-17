@@ -40,6 +40,7 @@ magnet_mount();
 //drill_guide();
 //spring_roller();
 //belt_clamp();
+belt_roller();
 //stacked_pulley();
 
 wall = 4;
@@ -49,9 +50,44 @@ $fn=36;
 //clear pipe to stick it in
 pipe_id = 2.067*in/2;
 pipe_od = 2.375*in/2;
-%difference(){
+*difference(){
     cylinder(r=pipe_od, h=50);
     translate([0,0,-.1]) cylinder(r=pipe_id, h=51);
+}
+
+//this is to make the belt into a pully - so we get more distance out of it.
+module belt_roller(){
+    pulley_rad = 22/2;
+    pulley_thick = 12;
+    axle_rad = 5/2;
+    
+    zip_rad = 7;
+    
+    difference(){
+        union(){
+            //pulley mount
+            intersection(){
+                rotate([90,0,0]) cylinder(r=pulley_rad+wall, h=pulley_thick+wall*2, center=true);
+                translate([wall*2,0,0]) rotate([90,0,0]) cylinder(r=pulley_rad+wall, h=pulley_thick+wall*2, center=true);
+                
+            }
+            
+            //ring for zip tieing to the spring
+            translate([pulley_rad+wall+zip_rad/2,0,0])
+            rotate([90,0,0]) rotate_extrude(){
+                translate([zip_rad,0,0]) circle(r=zip_rad/2);
+            }
+        }
+        
+        //pulley
+        rotate([90,0,0]){
+            cylinder(r=pulley_rad+1, h=pulley_thick+1, center=true);
+            cylinder(r=axle_rad+.1, h=pulley_thick*5, center=true);
+        }
+        
+        //cut off top and bottom
+        for(i=[0,1]) mirror([0,0,i]) translate([0,0,pulley_thick+wall]) cube([100,100,pulley_thick+wall], center=true);
+    }
 }
 
 module belt_clamp(){
