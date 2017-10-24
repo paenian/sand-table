@@ -5,6 +5,7 @@ import serial
 import time
 import random
 import math
+import pygame
 
 __author__ = 'Paul Chase'
 
