@@ -5,6 +5,8 @@ import serial
 import time
 import random
 import math
+import kivy
+
 
 __author__ = 'Paul Chase'
 
