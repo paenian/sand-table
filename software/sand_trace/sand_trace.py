@@ -5,7 +5,8 @@ import serial
 import time
 import random
 import math
-import pygame
+import kivy
+
 
 __author__ = 'Paul Chase'
 
