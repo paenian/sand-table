@@ -36,12 +36,13 @@ weight = 2;
 
 //corner_mount(motor=false, tensioner = weight);
 //corner_mount(motor=false);
-magnet_mount();
+//magnet_mount();
 //drill_guide();
 //spring_roller();
 //belt_clamp();
 belt_roller();
 //stacked_pulley();
+translate([32,0,0]) string_pulley();
 
 wall = 4;
 
@@ -57,18 +58,21 @@ pipe_od = 2.375*in/2;
 
 //this is to make the belt into a pully - so we get more distance out of it.
 module belt_roller(){
-    pulley_rad = 22/2;
-    pulley_thick = 12;
-    axle_rad = 5/2;
+    pulley_rad = 13/2;
+    pulley_thick = 6+.2;
+    axle_rad = 4/2+.2;
     
-    zip_rad = 7;
+    pulley_bump_thick=1;
     
+    zip_rad = 5;
+    
+    translate([0,0,(pulley_thick+wall)/2])
     difference(){
         union(){
             //pulley mount
             intersection(){
-                rotate([90,0,0]) cylinder(r=pulley_rad+wall, h=pulley_thick+wall*2, center=true);
-                translate([wall*2,0,0]) rotate([90,0,0]) cylinder(r=pulley_rad+wall, h=pulley_thick+wall*2, center=true);
+                rotate([90,0,0]) cylinder(r=pulley_rad+wall, h=pulley_thick+wall*2+pulley_bump_thick*2, center=true);
+                translate([wall*2,0,0]) rotate([90,0,0]) cylinder(r=pulley_rad+wall*1.5, h=pulley_thick+wall*2+pulley_bump_thick*2, center=true);
                 
             }
             
@@ -79,9 +83,17 @@ module belt_roller(){
             }
         }
         
-        //pulley
         rotate([90,0,0]){
-            cylinder(r=pulley_rad+1, h=pulley_thick+1, center=true);
+            //pulley
+            %cylinder(r=pulley_rad, h=pulley_thick, center=true);
+            difference(){
+                cylinder(r=pulley_rad+1, h=pulley_thick+pulley_bump_thick*2, center=true);
+                for(i=[0,1]) mirror([0,0,i]) translate([0,0,pulley_thick/2+.05]) {
+                    cylinder(r1=axle_rad+1, r2=axle_rad+3, h=pulley_bump_thick+.05);
+                }
+            }
+            
+            //axle
             cylinder(r=axle_rad+.1, h=pulley_thick*5, center=true);
         }
         
@@ -111,6 +123,56 @@ module belt_clamp(){
         //zip tie through the spring & around the top
         translate([0,0,5+wall/2-.5]) scale([1,1.5,1]) rotate([0,90,0]) rotate_extrude(){
             translate([5,0,0]) square([2,4], center=true);
+        }
+    }
+}
+
+//Pulley for running string.
+//default pulley rad is calculated to have a 20mm circumference.
+//Uses two M3 square nuts to hold on.
+module string_pulley(pulley_rad = 40/(2*3.14159)+.25, pulley_height = 3){
+   
+    m3_rad = 1.7;
+    m3_nut_height = 2.5;
+    m3_nut_flat = 6;
+    m3_nut_rad = 6*sqrt(2)/2;
+    m5_rad = 5/2+.2;
+    
+    base_height = m3_nut_flat+wall/2;
+    base_rad = pulley_rad+wall;
+    
+    flange_height = 2;
+    flange_rad=pulley_rad+flange_height;
+    
+    difference(){
+        union(){
+            //thick base
+            cylinder(r=base_rad, h=base_height);
+            
+            //bottom flange
+            translate([0,0,base_height-.1]) cylinder(r1=flange_rad, r2=pulley_rad, h=flange_height+.1);
+            
+            //pulley
+            translate([0,0,base_height+flange_height-.1]) cylinder(r=pulley_rad, h=pulley_height+.1);
+            
+            //top flange
+            translate([0,0,base_height+flange_height+pulley_height-.1]) cylinder(r2=flange_rad, r1=pulley_rad, h=flange_height+.1);
+            
+        }
+        
+        //axle
+        cylinder(r=m5_rad, h=50, center=true);
+        
+        //secure with screws
+        for(i=[0,90]) rotate([0,0,i]){
+            //screw
+            translate([base_rad/2,0,base_height/2]) rotate([0,90,0]) cylinder(r=m3_rad, h=base_rad+3, center=true);
+            
+            //nut
+            hull(){
+                translate([base_rad/2,0,base_height/2]) rotate([0,90,0]) rotate([0,0,180/4]) cylinder(r=m3_nut_rad, h=m3_nut_height, center=true, $fn=4);
+                translate([base_rad/2,0,-base_height/2]) rotate([0,90,0]) rotate([0,0,180/4]) cylinder(r=m3_nut_rad+.25, h=m3_nut_height+.5, center=true, $fn=4);
+            }
         }
     }
 }
