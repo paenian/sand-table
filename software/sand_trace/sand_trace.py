@@ -5,27 +5,29 @@ import serial
 import time
 import random
 import math
+import pygame
 
 __author__ = 'Paul Chase'
 
 
 class Sand_Trace(object):
-    MOTOR_DIST = 417
+    MOTOR_DIST = 217
 
     def __init__(self):
-        self.serial = serial.Serial('/dev/ttyACM1',115200)
+        #TODO: serial port chooser :-)
+        self.serial = serial.Serial('/dev/ttyACM0',115200)
         
         # Wake up grbl
-        self.serial.write("\r\n\r\n")
+        self.serial.write("\r\n\r\n".encode())
         time.sleep(2)   # Wait for grbl to initialize 
         self.serial.flushInput()  # Flush startup text in serial input
 
         # Stream g-code to grbl
         for x in range(0,10):
+            self.send_move( 10, 10)
+            self.send_move( 10, 50)
             self.send_move( 50, 50)
-            self.send_move( 50,-50)
-            self.send_move(-50,-50)
-            self.send_move(-50, 50)
+            self.send_move( 50, 10)
 
         self.serial.close()
 
@@ -39,10 +41,10 @@ class Sand_Trace(object):
         a = math.sqrt(x*x+y*y)
         b = math.sqrt(x*x+(dist-y)*(dist-y))
 
-        move = "G0 X"+str(a)+" Y"+str(b)
+        move = "G0 X"+str(a)+" Y"+str(b) + "\n"
 
         print('Sending: ' + move)
-        self.serial.write(move + '\n')
+        self.serial.write(move.encode())
         self.grbl_out = self.serial.readline()
         print(' : ' + move.strip())
 
