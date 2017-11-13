@@ -60,7 +60,10 @@ pipe_od = 2.375*in/2;
 module belt_roller(){
     pulley_rad = 13/2;
     pulley_thick = 6+.2;
+    
     axle_rad = 4/2+.2;
+    axle_cap_rad = 7.4/2+.2;
+    axle_nut_rad = 7*sqrt(2)/2+.2;
     
     pulley_bump_thick=1;
     
@@ -95,6 +98,10 @@ module belt_roller(){
             
             //axle
             cylinder(r=axle_rad+.1, h=pulley_thick*5, center=true);
+            //recess the screwhead
+            translate([0,0,(pulley_thick+wall*2+pulley_bump_thick*2)/2]) cylinder(r=axle_cap_rad, h=wall, center=true);
+            //recess the nut
+            translate([0,0,-(pulley_thick+wall*2+pulley_bump_thick*2)/2]) cylinder(r=axle_nut_rad, h=wall, center=true, $fn=4);
         }
         
         //cut off top and bottom
