@@ -40,13 +40,17 @@ weight = 2;
 //drill_guide();
 //spring_roller();
 //belt_clamp();
-belt_roller();
+//belt_roller();
 //stacked_pulley();
-translate([32,0,0]) string_pulley();
+//translate([32,0,0]) string_pulley();
+
 
 wall = 4;
 
 $fn=36;
+
+
+assembly();
 
 //clear pipe to stick it in
 pipe_id = 2.067*in/2;
@@ -54,6 +58,10 @@ pipe_od = 2.375*in/2;
 *difference(){
     cylinder(r=pipe_od, h=50);
     translate([0,0,-.1]) cylinder(r=pipe_id, h=51);
+}
+
+module assembly(motor = true){
+  corner_mount();  
 }
 
 //this is to make the belt into a pully - so we get more distance out of it.
