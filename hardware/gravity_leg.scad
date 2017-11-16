@@ -101,9 +101,10 @@ module weight_claw(h=14, angle = 30, pulley=true){
         //add the pulley
         if(pulley == true){
             translate([-weight_rad-belt_rad*1,0,0]) rotate([90,0,0]) {
-                screw_pack();
+                screw_pack(extend = 11);
                 v_pulley(solid=-1);
                 %v_pulley(solid=1);
+                
             }
         }
         
@@ -200,14 +201,14 @@ module v_pulley(solid=-1, edge=1){
     
 }
 
-module screw_pack(extend_nut=false){
+module screw_pack(extend = 0, extend_nut=false){
     screw_cap_len = 4;
     cylinder(r=screw_rad, h=screw_len+screw_cap_len, center=true);
-    translate([0,0,screw_len/2]) cylinder(r=screw_cap_rad, h=screw_cap_len, center=true);
+    translate([0,0,screw_len/2+extend/2]) cylinder(r=screw_cap_rad, h=screw_cap_len+extend, center=true);
     hull(){
-        translate([0,0,-screw_len/2]) cylinder(r1=nut_rad+.125, r2=nut_rad, h=screw_cap_len, center=true, $fn=4);
+        translate([0,0,-screw_len/2-extend/2]) cylinder(r1=nut_rad+.125, r2=nut_rad, h=screw_cap_len+extend, center=true, $fn=4);
         if(extend_nut == true){
-            translate([-5,-5,-screw_len/2]) cylinder(r1=nut_rad+.125, r2=nut_rad, h=screw_cap_len, center=true, $fn=4);
+            translate([-5,-5,-screw_len/2-extend/2]) cylinder(r1=nut_rad+.125, r2=nut_rad, h=screw_cap_len+extend, center=true, $fn=4);
         }
     }
 }
