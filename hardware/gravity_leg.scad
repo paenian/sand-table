@@ -8,17 +8,16 @@ $fs = fs;    //the smallest edge is this long - with a .4mm nozzle, the facets s
 motor_w = 42;
 motor_h = 30;
 motor_rad = 50/2;
-motor_bump_rad = 22/2+.25;
+motor_bump_rad = 26/2+1;
 motor_bump_height = 2;
 motor_shaft_rad = 4/2+.25;
 motor_shaft_len = 22;
 motor_screw_sep = 31;
-motor_screw_rad = 3.3/2;
+motor_screw_rad = 3.4/2;
 motor_screw_cap_rad = 8/2;
 motor_screw_len = 10;
 
-pulley_inner_rad = 13;
-pulley_outer_rad = 17;
+pulley_rad = 40/(2*3.14159)+.25; 
 pulley_height = 19;
 pulley_base_height = 7;
 pulley_base_rad = 11-.25;
@@ -47,7 +46,7 @@ v_pulley_edge_thick = 1;
 screw_rad = 4/2+.25;
 screw_cap_rad = 8/2+.25;
 screw_len = 16;
-nut_rad = 10/2;
+nut_rad = 10/2+.25;
 nut_height = 3.25;
 
 spacer_len = 5;
@@ -67,11 +66,11 @@ leg_lift = 25;
 
 *gravity_leg();
 *gravity_leg(motor=false);
-*string_pulley();
-weight_claw(pulley=true);
+string_pulley();
+*weight_claw(pulley=true);
 
 module weight_claw(h=14, angle = 30, pulley=true){
-    weight_rad = in*2/2+.25;
+    weight_rad = in*2/2-.25;
     belt_rad = 11;
     
     difference(){
@@ -114,10 +113,11 @@ module weight_claw(h=14, angle = 30, pulley=true){
 }
 
 module gravity_leg(height = leg_lift, motor=true, leg=true){
+    base_thick = wall+4;
     difference(){
         union(){
             //baseplate - everything mounts here
-            translate([0,0,wall/2+2]) motor_body(motor_h=wall+4, motor_bump_height = wall*5, bump=motor);
+            translate([0,0,wall/2+2]) motor_body(motor_h=base_thick, motor_bump_height = wall*5, bump=motor);
             
             if(motor == false){
                 //add a bump for the pulley to sit on
@@ -152,6 +152,20 @@ module gravity_leg(height = leg_lift, motor=true, leg=true){
             }
         }
         
+        //make some slots so we can actually attach the pulley
+        if(motor == true){
+            rad = 2.5;
+            for(i=[0,90]) rotate([0,0,i]) translate([0,0,base_thick/2]) hull(){
+                cylinder(r=rad, h=10);
+                sphere(r=rad);
+                
+                translate([20,0,0]){
+                    cylinder(r=rad, h=10);
+                    sphere(r=rad);
+                }
+            }
+        }
+        
         //mount the weight pulley and attachment
         weight_mount(solid=-1);
         
@@ -164,9 +178,9 @@ module gravity_leg(height = leg_lift, motor=true, leg=true){
 }
 
 module weight_mount(solid=1){
-    off = motor_screw_sep/2+6;
+    off = motor_screw_sep/2+11;
     
-    
+    translate([-pulley_rad/sqrt(2),-pulley_rad/sqrt(2),0])
     for(i=[0,1]) rotate([0,0,45]) mirror([0,i,0]) rotate([0,0,-45]) if(solid==1){
         union(){
             hull(){
@@ -184,7 +198,7 @@ module weight_mount(solid=1){
     }
 }
 
-module v_pulley(solid=-1, edge=1){
+module v_pulley(solid=-1, edge=1.5){
     if(solid == 1){
         for(i=[0,1]) mirror([0,0,i]) {
             cylinder(r1=v_pulley_rad, r2=v_pulley_flange_rad, h=v_pulley_thick/2-v_pulley_edge_thick);
@@ -194,7 +208,7 @@ module v_pulley(solid=-1, edge=1){
         difference(){
             cylinder(r=v_pulley_flange_rad+1, h=v_pulley_thick+edge*2.1, center=true);
             for(i=[0,1]) mirror([0,0,i]) translate([0,0,-v_pulley_thick/2-edge*1.1])
-                cylinder(r1=v_pulley_center_rad+2, r2=v_pulley_center_rad, h=edge);
+                cylinder(r1=v_pulley_center_rad+2, r2=v_pulley_center_rad, h=edge-.125);
         }
     }
     
@@ -341,13 +355,13 @@ module motor(pulley=true){
 //Pulley for running string.
 //default pulley rad is calculated to have a 20mm circumference.
 //Uses two M3 square nuts to hold on.
-module string_pulley(pulley_rad = 40/(2*3.14159)+.25, pulley_height = 3, wall=3){
+module string_pulley(pulley_height = 3, wall=3){
    
     m3_rad = 1.7;
     m3_nut_height = 2.5;
     m3_nut_flat = 6;
     m3_nut_rad = 6*sqrt(2)/2;
-    m5_rad = 5/2+.2;
+    m5_rad = 5/2+.25;
     
     base_height = m3_nut_flat+3;
     base_rad = pulley_base_rad;
