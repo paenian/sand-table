@@ -53,19 +53,20 @@ spacer_len = 5;
 spacer_rad = 6/2+.25;
 spacer_wall = 1.125;
 
-string_height = pulley_base_height+(pulley_height-pulley_base_height)/2+1+motor_bump_height/2;
+string_height = pulley_base_height+(pulley_height-pulley_base_height)/2+motor_bump_height/2;
+string_rad = 1;
 
 
 wall = 4;
 motor_offset = -hairpin_base_width/2+hairpin_hole_1;
-leg_lift = 25;
+leg_lift = 23;
 
 %motor();
 %translate([-motor_offset,-motor_offset,leg_lift+hairpin_base_thick]) hairpin_leg();
 
 
-*gravity_leg();
-*gravity_leg(motor=false);
+!gravity_leg();
+gravity_leg(motor=false);
 string_pulley();
 *weight_claw(pulley=true);
 
@@ -114,14 +115,26 @@ module weight_claw(h=14, angle = 30, pulley=true){
 
 module gravity_leg(height = leg_lift, motor=true, leg=true){
     base_thick = wall+4;
+    v_pulley_height = string_height-v_pulley_thick/2+string_rad*2;
     difference(){
         union(){
             //baseplate - everything mounts here
             translate([0,0,wall/2+2]) motor_body(motor_h=base_thick, motor_bump_height = wall*5, bump=motor);
             
             if(motor == false){
+                //draw the v-pulley in
+                %translate([0,0,v_pulley_height+v_pulley_thick/2]) v_pulley(solid=1);
+                
                 //add a bump for the pulley to sit on
-                cylinder(r1=v_pulley_center_rad+wall, r2=v_pulley_center_rad, h=string_height-v_pulley_thick/2);
+                cylinder(r1=v_pulley_center_rad+wall, r2=v_pulley_center_rad, h=v_pulley_height);
+                
+                //and a guide for the string
+                difference(){
+                    translate([0,-v_pulley_flange_rad,0]) cylinder(r=v_pulley_flange_rad, h=v_pulley_height+v_pulley_thick);
+                    cylinder(r=v_pulley_flange_rad+string_rad/2, h=height+1);
+                }
+            }else{
+                //guide for string around the pulley?
             }
             
             //mount it to the leg
@@ -185,14 +198,19 @@ module weight_mount(solid=1){
         union(){
             hull(){
                 translate([off-5,-off+5,0]) cylinder(r=10, h=wall+1);
-                translate([off,-off,string_height-v_pulley_rad]) rotate([0,0,45]) rotate([0,90,0]) 
-                    cylinder(r=6, h=screw_len, center=true);
+                translate([off,-off,string_height-v_pulley_rad]) rotate([0,0,45]) rotate([0,90,0]) {
+                    cylinder(r=v_pulley_flange_rad+.75, h=screw_len, center=true);
+                    
+                }
             }
+            translate([off,-off,string_height-v_pulley_rad-1.5]) rotate([0,0,45]) rotate([0,90,0]) translate([-2-v_pulley_flange_rad,0,0])  scale([1,2,1]) rotate([0,0,45]) cylinder(r=2, h=screw_len, center=true);
+            
         }
     }else{
         translate([off,-off,string_height-v_pulley_rad]) rotate([0,0,45]) rotate([0,90,0]) {
             screw_pack(extend_nut=true);
             v_pulley(solid=-1);
+            %translate([-v_pulley_rad-1,0,0]) rotate([90,0,0]) cylinder(r=string_rad+.1, h=30, center=true);
             %v_pulley(solid=1);
         }
     }
@@ -228,7 +246,7 @@ module screw_pack(extend = 0, extend_nut=false){
 }
 
 module guide_spacer(solid=1){
-    h = string_height;
+    h = string_height+string_rad*4;
     off = motor_screw_sep/2+5;
     translate([off, off, 0])
     if(solid == 1){
@@ -243,7 +261,7 @@ module guide_spacer(solid=1){
         }
         
         //zip tie it in
-        translate([0,0,h]) rotate([0,0,45]) rotate([0,90,0]) rotate_extrude(){
+        translate([0,0,h]) rotate([0,0,45]) scale([1,2,1]) rotate([0,90,0]) rotate_extrude(){
             translate([7,0,0]) square([2,4], center=true);
         }
     }
@@ -257,7 +275,7 @@ module leg_mount(solid=1, h=10, offset = hairpin_hole_1-hairpin_hole_inset, wall
         if(solid == 1){
             hull(){
                 translate([base_inset, base_inset,0]) cylinder(r=hairpin_hole_cap_rad+wall, h=wall);
-                translate([0, 0, h-wall]) cylinder(r=hairpin_hole_inset-.25,h=wall);
+                translate([0, 0, h-.1]) rotate([0,0,45]) cylinder(r=hairpin_hole_inset*sqrt(2)-.25,h=.1, $fn=4);
             }
         }else{
             translate([0,0,-.1]) {
@@ -355,7 +373,7 @@ module motor(pulley=true){
 //Pulley for running string.
 //default pulley rad is calculated to have a 20mm circumference.
 //Uses two M3 square nuts to hold on.
-module string_pulley(pulley_height = 3, wall=3){
+module string_pulley(pulley_height = string_rad*4, wall=3){
    
     m3_rad = 1.7;
     m3_nut_height = 2.5;
