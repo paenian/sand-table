@@ -36,7 +36,7 @@ weight = 2;
 
 //corner_mount(motor=false, tensioner = weight);
 //corner_mount(motor=false);
-//magnet_mount();
+magnet_mount();
 //drill_guide();
 //spring_roller();
 //belt_clamp();
@@ -50,7 +50,7 @@ wall = 4;
 $fn=36;
 
 
-assembly();
+//assembly();
 
 //clear pipe to stick it in
 pipe_id = 2.067*in/2;
@@ -265,7 +265,7 @@ module spring_roller(roller_height=20){
 }
 
 module magnet_mount(){
-    magnet_len = in*.5;
+    magnet_len = in*.5+.5;
     magnet_rad = (1/2*in)/2 + .2;
     
     
@@ -279,8 +279,8 @@ module magnet_mount(){
     
     
     //neopixel 16x ring
-    led_outer_rad = 46/2;
-    led_inner_rad = 30/2;
+    led_outer_rad = 31/2;
+    led_inner_rad = 29/2;
     led_height = 5;
     
     //cylinder(r=led_rad, h=50);
@@ -325,7 +325,7 @@ module magnet_mount(){
             }
             
             //zip tie slot
-            translate([0,0,belt_lift+2.5]) rotate([90,0,0]) scale([2,1,1]) rotate_extrude(){
+            translate([0,0,belt_lift+2.5]) rotate([90,0,0]) scale([3,1,1]) rotate_extrude(){
                 translate([(belt_width+wall)/2,0,0]) square([2,4], center=true);
             }
         }
