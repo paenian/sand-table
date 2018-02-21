@@ -1,0 +1,3 @@
+[submodule "firmware/grbl-polar"]
+	path = firmware/grbl-polar
+	url = https://github.com/ilaro-org/grbl-polar.git
