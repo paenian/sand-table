@@ -9,7 +9,7 @@ spacer_height = 6;
 //this is for the big v-wheels
 wheel_thick = 10.23;
 wheel_rad = 23.9/2;
-wheel_eff_rad = 20/2;   //radius sticking out of the v-slot
+wheel_eff_rad = 19/2;   //radius sticking out of the v-slot
 
 /*
 //this is for the mini v-wheels
@@ -113,7 +113,7 @@ module pulley(solid = 1){
             cylinder(r=m5_rad, h=pulley_height+1, center=true);
         }
     }else{
-        cylinder(r=m5_rad, h=idler_height*3, center=true);
+        cylinder(r=m5_rad, h=idler_height*5, center=true);
     }
 }
 
@@ -135,7 +135,7 @@ module idler(solid = 1){
             cylinder(r=m5_rad, h=idler_height+1, center=true);
         }
     }else{
-        cylinder(r=m5_rad, h=idler_height*3, center=true);
+        cylinder(r=m5_rad, h=idler_height*5, center=true);
     }
 }
 

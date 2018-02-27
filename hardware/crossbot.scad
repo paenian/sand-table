@@ -1,7 +1,7 @@
 include <configuration.scad>
 //a simple, lightweight gantry system using two beams.
 
-part = 10;
+part = 1;
 
 
 if(part == 10)
@@ -10,7 +10,16 @@ if(part == 10)
 if(part == 0)
     magnet_carriage();
 
-idler_offset = 25.4;
+if(part == 1)
+    double_idler();
+
+if(part == 2)
+    beam_carriage();
+
+if(part == 3)
+    motor_mount();
+
+idler_offset = 26;
 
 module assembly(){
     //base beam
@@ -22,45 +31,135 @@ module assembly(){
     //magnet carriage
     translate([0,0,magnet_carriage_height]) magnet_carriage();
     
+    //double idler - on the cross beam
+    translate([0,0,magnet_carriage_height-carriage_clearance+wall]) double_idler();
+    
     //beam carriage
     //magnet carriage
     translate([0,0,beam_carriage_height]) beam_carriage();
+    
+    //single idler - on the base beam
+    //actually has two idlers, one for the cross beam and one for the base beam
+    
+    //motor mounts - on the base beam
+    //needs to mount one motor to move the cross beam, and one to move the gantry along it.
+    translate([0,0,y_beam_height]) motor_mount();
+}
+
+module motor_mount(){
+    motor_screw_sep = 31;
+    motor_screw_rad = 1.7;
+    motor_screw_flange_rad = 5.5;
+    motor_w = motor_screw_flange_rad*2+motor_screw_sep;
+    motor_flange_rad = 29/2;
+    
+    slot =2;
+    
+    translate([0,main_beam_length/2,beam/2+wall/2]) difference(){
+        union(){
+            cube([beam,beam*3,wall], center=true);
+            
+            translate([0,motor_w/2,0]) hull(){
+                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([motor_screw_sep/2, motor_screw_sep/2, 0]) cylinder(r=motor_screw_flange_rad, h=wall, center=true);
+            }
+            
+            //align the carriage
+            translate([]) difference(){
+                intersection(){
+                    translate([0,0,wall/2]) cube([beam/2,100,2.5], center=true);
+                    translate([0,-beam*.75,0]) hull() for(i=[0,1]) mirror([0,i,0]) translate([0,beam/3.1, 0])
+                        cylinder(r=m5_rad+wall, h=wall*3);
+                }
+                //cross beam
+                translate([0,0,beam/2+wall/2]) rotate([90,0,0]) beam(length = cross_beam_length);
+            }
+        }
+        
+        //motor holes
+        translate([0,motor_w/2,0]) {
+                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) hull(){
+                    translate([motor_screw_sep/2-slot/2, motor_screw_sep/2-slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
+                    translate([motor_screw_sep/2+slot/2, motor_screw_sep/2+slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
+                }
+                
+                cylinder(r=motor_flange_rad, h=wall+1, center=true);
+            }
+            
+        
+        
+        //beam holes
+        translate([0,0,0]) for(i=[0,1]) translate([0,-pulley_rad-i*13,0])
+            cylinder(r=m5_rad, h=wall*3, center=true);
+    }
 }
 
 module y_belt_mounts(solid = 1){
-    
-    
-    for(i=[0,1]) mirror([i,0,0]) translate([idler_offset,0, wall+1+idler_height/2]) {
-                idler(solid = solid);
+    for(i=[0,1]) mirror([i,0,0]) translate([0,0, wall+1+idler_height/2]) {
+                translate([idler_offset,0,0]) idler(solid = solid);
                 
                 //draw in some more idlers for reference :-)
                 for(j=[0,1]) mirror([0,j,0]) {
                     //these pulleys attach to the beam carriage
-                    translate([-idler_offset+pulley_rad*2+belt_thick,pulley_rad*4+belt_thick*2,0])
+                    translate([pulley_rad*2+belt_thick,pulley_rad*4+belt_thick*2+5,-beam-wall])
                         idler(solid = solid);
                     
-                    //these pulleys attach to the ends of the beam
-                    translate([-idler_offset+cross_beam_length/2,pulley_rad*2+belt_thick,0])
+                    //these pulleys attach to the ends of the cross beam
+                    translate([cross_beam_length/2+pulley_rad,pulley_rad*2+belt_thick,0])
                         idler(solid = solid);
                 }
                 
                 //these attach to the ends of the main beam
-                translate([-idler_offset,main_beam_length/2,0])
-                    idler();
-                translate([-idler_offset,-main_beam_length/2,0])
+                translate([0,main_beam_length/2,-beam-wall])
+                    rotate([0,0,90]) idler(solid = solid);
+                translate([0,-main_beam_length/2,-beam-wall])
                     pulley(solid = solid);
             }
 }
 
+module double_idler(){
+    idler_sep = pulley_rad*2+belt_thick;
+    difference(){
+        translate([cross_beam_length/2,0,0]) union(){
+            hull(){
+                for(i=[0,1]) mirror([0,i,0]) translate([pulley_rad,pulley_rad*2+belt_thick,0]) cylinder(r=m5_rad+wall, h=wall);
+                
+            }
+            
+            //align the carriage
+            translate([]) difference(){
+                intersection(){
+                    translate([0,0,wall]) cube([100,beam/2,2.5], center=true);
+                    translate([-13/2,0,0]) hull() for(i=[0,1]) mirror([i,0,0]) translate([13*(7/6), 0, 0])
+                        cylinder(r=m5_rad+wall, h=wall*3);
+                }
+                //cross beam
+                translate([0,0,-x_beam_height+magnet_carriage_height+wall*2-carriage_clearance-.15]) rotate([0,90,0]) beam(length = cross_beam_length);
+            }
+            
+            //attach to the beam
+            hull(){
+                for(i=[-1,0,1]) translate([-pulley_rad-i*13,0,0])
+                    cylinder(r=m5_rad+wall, h=wall);
+            }
+        }
+        //attach to the beam
+        translate([cross_beam_length/2,0,0]) for(i=[0,1]) translate([-pulley_rad-i*13,0,0])
+            cylinder(r=m5_rad, h=wall*3, center=true);
+        
+        //idlers
+        y_belt_mounts(solid = -1);
+    }
+}
+
 //holds the magnet on top of the beam, holds belts
 module magnet_carriage(){
-    wheel_sep = 51;
+    wheel_sep = 43;
     difference(){
         union(){
             translate([0,0,wall/2]) cube([60,30,wall], center=true);
             
             //magnet mount
-            translate([0,0,wall-1]) cylinder(r1=magnet_rad+wall, r2=magnet_rad+wall/2, h=magnet_height);
+            translate([0,0,wall-1]) cylinder(r1=magnet_rad+wall+1, r2=magnet_rad+wall/2, h=magnet_height);
             
             //wheel supports
             for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([wheel_sep/2, beam/2+wheel_eff_rad, 0]){
@@ -82,6 +181,11 @@ module magnet_carriage(){
             wheel(solid=-1);
         }
         
+        //slots for wheel flex
+        for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([wheel_sep/2+wheel_eff_rad, beam/2+wheel_eff_rad/2, 0]){
+            rotate([0,0,19]) cube([wheel_rad*4-3,1.5,wall*3], center=true);
+        }
+        
         //idler holes
         y_belt_mounts(solid = -1);
     }
@@ -89,22 +193,44 @@ module magnet_carriage(){
 
 //holds the beams together, routes belts
 module beam_carriage(){
-    wheel_sep = 71;
+    wheel_sep = 83;
     
     difference(){
         union(){
             //wheel supports
             hull() for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([beam/2+wheel_eff_rad, wheel_sep/2, 0]){
+                cylinder(r=.1, h=wall);
+                %translate([0,0,-beam/2]) wheel();
+            }
+            
+            //wheel plate
+            for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([beam/2+wheel_eff_rad, wheel_sep/2, 0]){
                 cylinder(r=wheel_eff_rad, h=wall);
                 %translate([0,0,-beam/2]) wheel();
             }
             
+            //attach to the rail
+            hull() for(i=[0,1]) mirror([i,0,0]) translate([beam/2+wheel_rad, 0, 0])
+                cylinder(r=wheel_eff_rad, h=wall);
+            
             //support the rail
             difference(){
-                translate([0,0,wall]) cube([0,0,0], center=true);
+                intersection(){
+                    translate([0,0,wall]) cube([100,beam/2,2.5], center=true);
+                    hull() for(i=[0,1]) mirror([i,0,0]) translate([beam/2+wheel_rad, 0, 0])
+                        cylinder(r=wheel_eff_rad, h=wall*3);
+                }
                 //cross beam
-                translate([0,0,x_beam_height]) rotate([0,90,0]) beam(length = cross_beam_length);
+                translate([0,0,-x_beam_height+magnet_carriage_height+wall*2-carriage_clearance-.15]) rotate([0,90,0]) beam(length = cross_beam_length);
             }
         }
+        
+        //slots for wheel flex
+        for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([beam/2+wheel_eff_rad/2-1, wheel_sep/2+wheel_eff_rad, 0]){
+            rotate([0,0,180-19]) cube([2, wheel_rad*4-3,wall*3], center=true);
+        }
+        
+        //idler holes
+        y_belt_mounts(solid = -1);
     }
 }
