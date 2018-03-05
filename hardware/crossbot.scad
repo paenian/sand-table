@@ -1,7 +1,7 @@
 include <configuration.scad>
 //a simple, lightweight gantry system using two beams.
 
-part = 1;
+part = 3;
 
 
 if(part == 10)
@@ -18,6 +18,9 @@ if(part == 2)
 
 if(part == 3)
     motor_mount();
+
+if(part == 4)
+    offset_motor_mount();
 
 idler_offset = 26;
 
@@ -49,18 +52,98 @@ module assembly(){
 module motor_mount(){
     motor_screw_sep = 31;
     motor_screw_rad = 1.7;
-    motor_screw_flange_rad = 5.5;
+    motor_screw_cap_rad = 6/2;
+    motor_screw_flange_rad = 5.5+1;
     motor_w = motor_screw_flange_rad*2+motor_screw_sep;
+    echo(motor_w);
     motor_flange_rad = 29/2;
     
     slot =2;
     
+    extra = wall/2;
+    
     translate([0,main_beam_length/2,beam/2+wall/2]) difference(){
         union(){
-            cube([beam,beam*3,wall], center=true);
+            hull(){
+                translate([0,0,extra/2]) cube([beam+wall,beam*3,wall+extra], center=true);
             
-            translate([0,motor_w/2,0]) hull(){
-                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([motor_screw_sep/2, motor_screw_sep/2, 0]) cylinder(r=motor_screw_flange_rad, h=wall, center=true);
+                translate([0,motor_w/2+pulley_flange_rad*2+1,extra/2])hull()
+                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]){
+                    translate([motor_w/2-motor_screw_cap_rad, motor_w/2-motor_screw_cap_rad, 0]) cylinder(r=motor_screw_cap_rad+wall/2, h=wall+wall/2, center=true);
+                }
+            }
+            
+            //hole for idler pulley
+            for(i=[0,1]) mirror([i,0,0]) translate([pulley_rad,pulley_flange_rad+.5,0]){
+                idler_bump();
+            }
+            
+        }
+        
+        //motor holes
+        translate([0,motor_w/2+pulley_flange_rad*2+1,0]) {
+                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) hull(){
+                    translate([motor_screw_sep/2-slot/2, motor_screw_sep/2-slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
+                    translate([motor_screw_sep/2+slot/2, motor_screw_sep/2+slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
+                }
+                hull() for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]){
+                    translate([motor_w/2-motor_screw_cap_rad, motor_w/2-motor_screw_cap_rad, wall/2]) cylinder(r=motor_screw_cap_rad, h=wall+wall/2);
+                }
+                
+                cylinder(r=motor_flange_rad, h=wall+1, center=true);
+            }
+        
+        //hole for idler pulley
+        for(i=[0,1]) mirror([i,0,0]) translate([pulley_rad,pulley_flange_rad+.5,0]){
+            cylinder(r=m5_rad, h = 30, center=true);
+            //translate([0,0,wall/2]) cylinder(r=m5_rad+4, h = 30);
+        }
+            
+        difference(){
+            translate([0,-beam,beam/2+wall/2]) rotate([90,0,0]) hull() scale([1.01,1.01,1.01]) beam(length = beam*2.1);
+             difference(){
+                intersection(){
+                    translate([0,0,wall/2]) cube([beam/2,100,2.5], center=true);
+                    translate([0,-beam*.75,0]) hull() for(i=[0,1]) mirror([0,i,0]) translate([0,beam/3.1, 0])
+                        cylinder(r=m5_rad+wall, h=wall*3);
+                }
+                //cross beam
+                translate([0,0,beam/2+wall/2]) rotate([90,0,0]) beam(length = cross_beam_length);
+            }
+            
+        }
+        
+        //beam holes
+        translate([0,0,0]) for(i=[0,1]) translate([0,-pulley_rad-i*13,0])
+            cylinder(r=m5_rad, h=wall*3, center=true);
+    }
+}
+
+module offset_motor_mount(){
+    motor_screw_sep = 31;
+    motor_screw_rad = 1.7;
+    motor_screw_flange_rad = 5.5;
+    motor_w = motor_screw_flange_rad*2+motor_screw_sep;
+    motor_flange_rad = 29/2;
+    
+    motor_offset = pulley_rad/2;
+    
+    slot =2;
+    
+    extra = wall/2;
+    
+    translate([0,main_beam_length/2,beam/2+wall/2]) difference(){
+        union(){
+            hull(){
+                cube([beam,beam*3,wall], center=true);
+            
+                translate([motor_offset,motor_w/2+(m5_rad+wall/2)*2,0]) {
+                    for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([motor_screw_sep/2, motor_screw_sep/2, 0]) cylinder(r=motor_screw_flange_rad, h=wall, center=true);
+                        }
+                        
+                for(i=[0,1]) mirror([i,0,0]) translate([beam/2+m5_rad+wall/2,m5_rad+wall/2,0]){
+                    cylinder(r=m5_rad+wall, h = wall, center=true);
+                }
             }
             
             //align the carriage
@@ -76,7 +159,7 @@ module motor_mount(){
         }
         
         //motor holes
-        translate([0,motor_w/2,0]) {
+        translate([motor_offset,motor_w/2+(m5_rad+wall/2)*2,0]) {
                 for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) hull(){
                     translate([motor_screw_sep/2-slot/2, motor_screw_sep/2-slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
                     translate([motor_screw_sep/2+slot/2, motor_screw_sep/2+slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
@@ -85,7 +168,10 @@ module motor_mount(){
                 cylinder(r=motor_flange_rad, h=wall+1, center=true);
             }
             
-        
+        //hole for idler pulley
+        for(i=[0,1]) mirror([i,0,0]) translate([beam/2+m5_rad+wall/2,m5_rad+wall/2,0]){
+            cylinder(r=m5_rad, h = 30, center=true);
+        }
         
         //beam holes
         translate([0,0,0]) for(i=[0,1]) translate([0,-pulley_rad-i*13,0])
@@ -121,34 +207,30 @@ module double_idler(){
     difference(){
         translate([cross_beam_length/2,0,0]) union(){
             hull(){
-                for(i=[0,1]) mirror([0,i,0]) translate([pulley_rad,pulley_rad*2+belt_thick,0]) cylinder(r=m5_rad+wall, h=wall);
-                
-            }
-            
-            //align the carriage
-            translate([]) difference(){
-                intersection(){
-                    translate([0,0,wall]) cube([100,beam/2,2.5], center=true);
-                    translate([-13/2,0,0]) hull() for(i=[0,1]) mirror([i,0,0]) translate([13*(7/6), 0, 0])
-                        cylinder(r=m5_rad+wall, h=wall*3);
+                for(i=[0,1]) mirror([0,i,0]) translate([pulley_rad,pulley_rad*2+belt_thick,0]){
+                    cylinder(r=m5_rad+wall, h=wall);
                 }
-                //cross beam
-                translate([0,0,-x_beam_height+magnet_carriage_height+wall*2-carriage_clearance-.15]) rotate([0,90,0]) beam(length = cross_beam_length);
             }
+            for(i=[0,1]) mirror([0,i,0]) translate([pulley_rad,pulley_rad*2+belt_thick,0])
+                idler_bump();
             
             //attach to the beam
             hull(){
-                for(i=[-1,0,1]) translate([-pulley_rad-i*13,0,0])
+                for(i=[-1,0]) translate([-pulley_rad-i*13,0,0])
                     cylinder(r=m5_rad+wall, h=wall);
             }
         }
         //attach to the beam
-        translate([cross_beam_length/2,0,0]) for(i=[0,1]) translate([-pulley_rad-i*13,0,0])
+        translate([cross_beam_length/2,0,0]) for(i=[0,-1]) translate([-pulley_rad-i*18,0,0])
             cylinder(r=m5_rad, h=wall*3, center=true);
         
         //idlers
         y_belt_mounts(solid = -1);
     }
+}
+
+module idler_bump(){
+    cylinder(r2=m5_rad+.75, r1=m5_rad*2.5, h=wall+1);
 }
 
 //holds the magnet on top of the beam, holds belts
@@ -171,6 +253,8 @@ module magnet_carriage(){
             
             //idlers
             %y_belt_mounts();
+            for(i=[0,1]) mirror([i,0,0]) translate([idler_offset,0,0])
+                idler_bump();
         }
         
         //magnet mount hole
@@ -193,7 +277,8 @@ module magnet_carriage(){
 
 //holds the beams together, routes belts
 module beam_carriage(){
-    wheel_sep = 83;
+    wheel_sep = (pulley_rad*4+belt_thick*2+5)*2;
+    center_wheel_sep = 59;
     
     difference(){
         union(){
@@ -206,18 +291,23 @@ module beam_carriage(){
             //wheel plate
             for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([beam/2+wheel_eff_rad, wheel_sep/2, 0]){
                 cylinder(r=wheel_eff_rad, h=wall);
+                scale([1,1,(wall+6)/(wall+1)]) idler_bump();
                 %translate([0,0,-beam/2]) wheel();
+                
             }
             
             //attach to the rail
-            hull() for(i=[0,1]) mirror([i,0,0]) translate([beam/2+wheel_rad, 0, 0])
-                cylinder(r=wheel_eff_rad, h=wall);
+            for(i=[0,1]) mirror([i,0,0]) hull() {
+                translate([center_wheel_sep/2, 0, 0]) cylinder(r=wheel_eff_rad, h=wall);
+                for(j=[0,1]) mirror([0,j,0]) translate([-beam/2-wheel_eff_rad, wheel_sep/2, 0])
+                cylinder(r=.1, h=wall);
+            }
             
             //support the rail
             difference(){
                 intersection(){
                     translate([0,0,wall]) cube([100,beam/2,2.5], center=true);
-                    hull() for(i=[0,1]) mirror([i,0,0]) translate([beam/2+wheel_rad, 0, 0])
+                    hull() for(i=[0,1]) mirror([i,0,0]) translate([center_wheel_sep/2, 0, 0])
                         cylinder(r=wheel_eff_rad, h=wall*3);
                 }
                 //cross beam
