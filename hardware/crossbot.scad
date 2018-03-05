@@ -1,7 +1,7 @@
 include <configuration.scad>
 //a simple, lightweight gantry system using two beams.
 
-part = 1;
+part = 3;
 
 
 if(part == 10)
@@ -53,15 +53,19 @@ module motor_mount(){
     motor_w = motor_screw_flange_rad*2+motor_screw_sep;
     motor_flange_rad = 29/2;
     
+    motor_ww = 42;
+    
     slot =2;
     
     translate([0,main_beam_length/2,beam/2+wall/2]) difference(){
         union(){
-            cube([beam,beam*3,wall], center=true);
+            hull(){
+                translate([0,0,wall/2]) cube([beam,beam*3,wall*2], center=true);
             
-            translate([0,motor_w/2,0]) hull(){
-                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([motor_screw_sep/2, motor_screw_sep/2, 0]) cylinder(r=motor_screw_flange_rad, h=wall, center=true);
+                translate([0,motor_w/2,wall/2]){
+                    for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) translate([motor_screw_sep/2+wall/2, motor_screw_sep/2+wall/2, 0]) cylinder(r=motor_screw_flange_rad, h=wall*2, center=true);
             }
+        }
             
             //align the carriage
             translate([]) difference(){
@@ -77,9 +81,15 @@ module motor_mount(){
         
         //motor holes
         translate([0,motor_w/2,0]) {
-                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) hull(){
+                for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) #hull(){
                     translate([motor_screw_sep/2-slot/2, motor_screw_sep/2-slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
                     translate([motor_screw_sep/2+slot/2, motor_screw_sep/2+slot/2, 0]) cylinder(r=motor_screw_rad, h=wall+1, center=true);
+                }
+                
+                cylinder(r=motor_flange_rad, h=wall+1, center=true);
+                
+                hull() translate([0,0,wall]) for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) {
+                    translate([motor_ww/2-3, motor_ww/2-3, 0]) cylinder(r=3.5, h=wall+1, center=true);
                 }
                 
                 cylinder(r=motor_flange_rad, h=wall+1, center=true);
