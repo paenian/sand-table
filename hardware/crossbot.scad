@@ -4,8 +4,9 @@ m5_cap_rad = 11/2;
 
 //a simple, lightweight gantry system using two beams.
 
-part =5;
+part = 5;
 
+$fn = 30;
 
 if(part == 10)
     assembly();
@@ -26,6 +27,12 @@ if(part == 4)
     offset_motor_mount();
 
 if(part == 5)
+    difference(){
+        rotate([-116,0,0]) base_beam_mount();
+        translate([0,0,-100-19]) cube([200,200,200], center=true);
+    }
+
+if(part == 6)
     base_beam_mount();
 
 idler_offset = 26;
@@ -59,28 +66,31 @@ module assembly(){
 
 module base_beam_mount(){
     height = -beam/2-y_beam_height;
-    length_beam = beam*3;
+    length_beam = beam*2;
     length_table = beam*5;
     echo(height);
     difference(){
         union(){
             hull(){
-                translate([0,0,-height/2+wall/2]) cube([beam,length_beam,wall], center=true);
+                translate([0,10,-height/2+wall/2]) cube([beam,length_beam,wall], center=true);
                 translate([0,0,height/2-wall/2]) cube([length_table,beam,wall], center=true);
             }
         }
         
         //attach to extrusion
-        for(i=[0,1]) mirror([0,i,0]) translate([0,length_beam/2-beam/2,-height/2-.1]){
+        translate([0,10,0]) for(i=[0,1]) mirror([0,i,0]) translate([0,length_beam/2-beam/2,-height/2-.1]){
             cylinder(r=m5_rad+.25, h=50);
             translate([0,0,wall]) cylinder(r=m5_cap_rad+.25, h=50);
         }
         
         //attach to table
-        #for(i=[0,1]) mirror([i,0,0]) translate([length_table/2-beam/2,0,height/2+.1]) mirror([0,0,1]) {
+        for(i=[0,1]) mirror([i,0,0]) translate([length_table/2-beam/2,0,height/2+.1]) mirror([0,0,1]) {
             cylinder(r=m5_rad+.25, h=50);
             translate([0,0,wall]) cylinder(r=m5_cap_rad+.25, h=50);
         }
+        
+        //slots for the belts to pass through
+        for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,-7]) cube([4,100,11], center=true);
     }
 }
 
