@@ -1,3 +1,4 @@
+
 include <configuration.scad>
 
 m5_cap_rad = 11/2;
@@ -28,12 +29,15 @@ if(part == 4)
 
 if(part == 5)
     difference(){
-        rotate([-116,0,0]) base_beam_mount();
-        translate([0,0,-100-19]) cube([200,200,200], center=true);
+        rotate([-116+3,0,0]) base_beam_mount();
+        translate([0,0,-100-19-1.5]) cube([200,200,200], center=true);
     }
 
 if(part == 6)
-    base_beam_mount();
+    difference(){
+        rotate([-116+3,0,0]) base_beam_mount(motor=true);
+        translate([0,0,-100-19-1.5]) cube([200,200,200], center=true);
+    }
 
 idler_offset = 26;
 
@@ -64,8 +68,12 @@ module assembly(){
     translate([0,150,y_beam_height/2+beam/4]) base_beam_mount();
 }
 
-module base_beam_mount(){
+module base_beam_mount(motor = false){
+    extra_height = 6;
     height = -beam/2-y_beam_height;
+    echo("WALLS");
+    echo(wall);
+    
     length_beam = beam*2;
     length_table = beam*5;
     echo(height);
@@ -73,15 +81,27 @@ module base_beam_mount(){
         union(){
             hull(){
                 translate([0,10,-height/2+wall/2]) cube([beam,length_beam,wall], center=true);
-                translate([0,0,height/2-wall/2]) cube([length_table,beam,wall], center=true);
+                translate([0,0,height/2-wall/2+extra_height]) cube([length_table,beam,wall], center=true);
             }
         }
         
         //attach to extrusion
-        translate([0,10,0]) for(i=[0,1]) mirror([0,i,0]) translate([0,length_beam/2-beam/2,-height/2-.1]){
-            cylinder(r=m5_rad+.25, h=50);
-            translate([0,0,wall]) cylinder(r=m5_cap_rad+.25, h=50);
+        if(motor == false) {
+            translate([0,10,0]) for(i=[0,1]) mirror([0,i,0]) translate([0,length_beam/2-beam/2,-height/2-.1]){
+                cylinder(r=m5_rad+.25, h=50);
+                translate([0,0,wall]) cylinder(r=m5_cap_rad+.25, h=50);
+            }
+        }else{
+            translate([0,10,0]) for(i=[1,-12]) translate([0,i,-height/2-.1]){
+                cylinder(r=m5_rad+.25, h=50);
+                translate([0,0,wall*2]) cylinder(r=m5_cap_rad+.25, h=50);
+            }
+            
+            //remove the motor mount
+            scale([1.02, 1.02, 1]) translate([0,-main_beam_length/2+beam-.1,beam/2+wall/2-height-wall*.5]) hull() motor_mount(idlers = false);
         }
+        
+        
         
         //attach to table
         for(i=[0,1]) mirror([i,0,0]) translate([length_table/2-beam/2,0,height/2+.1]) mirror([0,0,1]) {
@@ -94,7 +114,7 @@ module base_beam_mount(){
     }
 }
 
-module motor_mount(){
+module motor_mount(idlers = true){
     motor_screw_sep = 31;
     motor_screw_rad = 1.7;
     motor_screw_cap_rad = 6/2;
@@ -119,8 +139,10 @@ module motor_mount(){
             }
             
             //hole for idler pulley
-            for(i=[0,1]) mirror([i,0,0]) translate([pulley_rad,pulley_flange_rad+.5,0]){
-                idler_bump();
+            if(idlers == true){
+                for(i=[0,1]) mirror([i,0,0]) translate([pulley_rad,pulley_flange_rad+.5,0]){
+                    idler_bump();
+                }
             }
             
         }

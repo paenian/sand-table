@@ -8,4 +8,5 @@ openscad -o crossbot_stls/double_idler.stl -D part=1 crossbot.scad &
 openscad -o crossbot_stls/beam_carriage.stl -D part=2 crossbot.scad &
 openscad -o crossbot_stls/motor_mount.stl -D part=3 crossbot.scad &
 openscad -o crossbot_stls/offset_motor_mount.stl -D part=4 crossbot.scad &
-openscad -o crossbot_stls/base_beam_mount.stl -D part=5 crossbot.scad &
+openscad -o crossbot_stls/base_beam_mount.stl -D part=5 cirossbot.scad &
+openscad -o crossbot_stls/motor_beam_mount.stl -D part=6 crossbot.scad &
