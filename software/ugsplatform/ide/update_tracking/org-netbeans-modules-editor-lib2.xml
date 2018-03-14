@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.netbeans.modules.editor.lib2/1">
+    <module_version install_time="1520745106874" last="true" origin="installer" specification_version="2.16.1.55.3">
+        <file crc="984784746" name="config/ModuleAutoDeps/org-netbeans-modules-editor-lib2.xml"/>
+        <file crc="1027150669" name="config/Modules/org-netbeans-modules-editor-lib2.xml"/>
+        <file crc="2083031097" name="modules/locale/org-netbeans-modules-editor-lib2_ja.jar"/>
+        <file crc="2443051163" name="modules/locale/org-netbeans-modules-editor-lib2_pt_BR.jar"/>
+        <file crc="2372467139" name="modules/locale/org-netbeans-modules-editor-lib2_ru.jar"/>
+        <file crc="3488824609" name="modules/locale/org-netbeans-modules-editor-lib2_zh_CN.jar"/>
+        <file crc="629629516" name="modules/org-netbeans-modules-editor-lib2.jar"/>
+    </module_version>
+</module>
