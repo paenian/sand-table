@@ -28,6 +28,9 @@ if(part == 4)
 if(part == 5)
     base_beam_mount();
 
+motor_mount();
+
+
 idler_offset = 26;
 
 module assembly(){
