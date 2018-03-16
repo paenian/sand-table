@@ -8,10 +8,10 @@
 ; solid infill extrusion width = 11.25mm
 ; top infill extrusion width = 10.00mm
 
-$H
+G91
+G0 X-600 Y-600
 G92 X0 Y0
 G90
-
 ; Filament gcode
 G21 ; set units to millimeters
 G90 ; use absolute coordinates

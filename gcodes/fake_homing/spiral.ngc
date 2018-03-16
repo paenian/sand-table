@@ -6,8 +6,11 @@ M3
 (Header end.)
 G21 (All units in mm)
 
-$H
+(fake homing... I know, it's bad.  WHATEVS)
+G91
+G0 X-600 Y-600 F3000.000
 G92 X0 Y0
+G90
 
 (Start cutting path id: path3959)
 (Change tool to Cylindrical cutter)
