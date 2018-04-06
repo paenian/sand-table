@@ -49,8 +49,8 @@ pulley_height = 18;
 
 
 //screws et al
-m5_rad = 5/2+.1;
-m5_nut_rad = 8.79/2+.1;
+m5_rad = 5/2+.15;
+m5_nut_rad = 8.79/2+.25;
 
 belt_thick = 1.5;
 belt_height = 6;
