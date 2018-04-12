@@ -1,10 +1,18 @@
 include <configuration.scad>
 
+    motor_screw_sep = 31;
+    motor_screw_rad = 1.7;
+    motor_screw_cap_rad = 6/2;
+    motor_screw_flange_rad = 5.5+1;
+    motor_w = motor_screw_flange_rad*2+motor_screw_sep;
+    echo(motor_w);
+    motor_flange_rad = 29/2;
+
 m5_cap_rad = 11/2;
 
 //a simple, lightweight gantry system using two beams.
 
-part = 5;
+part = 7;
 
 $fn = 30;
 
@@ -28,7 +36,8 @@ if(part == 4)
 
 if(part == 5)
     difference(){
-        rotate([-116+3,0,0]) base_beam_mount();
+        rotate([-116+3,0,0])
+        base_beam_mount();
         translate([0,0,-100-19-1.5]) cube([200,200,200], center=true);
     }
 
@@ -36,6 +45,20 @@ if(part == 6)
     difference(){
         rotate([-116+3,0,0]) base_beam_mount(motor=true);
         translate([0,0,-100-19-1.5]) cube([200,200,200], center=true);
+    }
+    
+if(part == 7)
+    difference(){
+        rotate([-90,0,0])
+        base_beam_mount_2();
+        //translate([0,0,-100-19-1.5]) cube([200,200,200], center=true);
+    }
+
+if(part == 8)
+    difference(){
+        rotate([-90,0,0])
+        base_beam_mount_2(motor=true);
+        //translate([0,0,-100-19-1.5]) cube([200,200,200], center=true);
     }
 
 idler_offset = 26;
@@ -110,6 +133,89 @@ module base_beam_mount(motor = false){
         
         //slots for the belts to pass through
         for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,-7]) cube([4,100,11], center=true);
+    }
+}
+
+module base_beam_mount_2(motor = false){
+    extra_height = 6;
+    height = -beam/2-y_beam_height;
+    echo("WALLS");
+    echo(wall);
+    
+    axle_drop = height;
+    axle_offset = 13;
+    
+    length_beam = 11;
+    length_table = beam*5;
+    echo(height);
+    difference(){
+        union(){
+            hull(){
+                translate([0,beam/2-length_beam/2,-height/2-beam]) cube([beam,length_beam,beam], center=true);
+                translate([0,0,height/2-wall/2+extra_height]) cube([length_table,beam,wall], center=true);
+            }
+            
+            //motor/idler mount bracket
+            hull(){
+                translate([axle_offset,-motor_w/2,-axle_drop]) rotate([0,90,0]) motor(thick=7);
+                translate([axle_offset,0,0]) cube([7,7,7], center=true);
+            }
+        }
+        
+        //mounting holes for the motor or idler
+        if(motor == true){
+            translate([axle_offset,-motor_w/2,-axle_drop]) rotate([0,90,0]) motor(solid=false);
+        }else{
+            translate([axle_offset,-motor_w/2,-axle_drop]) rotate([0,90,0]) motor(solid=false, motor_flange_rad=m5_rad+.2);
+        }
+        
+        //attach to the beam
+        translate([0,0,-height+beam/2]) for(i=[0:1]) mirror([0,0,i]) translate([0,0,beam/2]) rotate([90,0,0]) {
+            cylinder(r=m5_rad+.25, h=50, center=true);
+            translate([0,0,0]) cylinder(r=m5_cap_rad+.25, h=50);
+        }
+        
+        
+        //slots for the belts to pass through
+        translate([0,0,-axle_drop]) rotate([0,90,0]) for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,0]) cube([4,100,11], center=true);
+
+        //attach to table
+        for(i=[0,1]) mirror([i,0,0]) translate([length_table/2-beam/2,0,height/2+.1]) mirror([0,0,1]) {
+            cylinder(r=m5_rad+.25, h=50);
+            translate([0,0,wall]) cylinder(r=m5_cap_rad+.25, h=50);
+        }
+    }
+}
+
+module motor(solid = true, thick=7){
+
+    
+    slot =2;
+    
+    extra = wall/2;
+    
+    if(solid == true){
+        //translate([0,motor_w/2+pulley_flange_rad*2+1,extra/2])
+        
+        hull()
+        for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]){
+            translate([motor_w/2-motor_screw_cap_rad, motor_w/2-motor_screw_cap_rad, 0]) cylinder(r=motor_screw_cap_rad+wall/2, h=thick, center=true);
+        }
+    }else{
+        echo("HEEEEEEY");
+        //screwholes
+         for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]) hull() for(k=[-slot/2, slot/2]){
+            translate([motor_screw_sep/2+k, motor_screw_sep/2+k, 0]) cylinder(r=motor_screw_rad, h=thick*5, center=true); 
+        }
+        
+        //center hole
+        cylinder(r=motor_flange_rad, h=thick*3, center=true);
+        
+        //the motor itself
+        translate([0,0,thick*3-.1]) hull()
+        for(i=[0,1]) for(j=[0,1]) mirror([i,0,0]) mirror([0,j,0]){
+            translate([motor_w/2-motor_screw_cap_rad, motor_w/2-motor_screw_cap_rad, 0]) cylinder(r=motor_screw_cap_rad+wall/2, h=thick*5, center=true);
+        }
     }
 }
 
