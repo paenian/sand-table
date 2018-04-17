@@ -14,7 +14,7 @@ m5_cap_rad = 11/2;
 
 //a simple, lightweight gantry system using two beams.
 
-part = 10;
+part = 7;
 
 $fn = 30;
 
@@ -187,12 +187,12 @@ module tension_roundel(rad = wheel_eff_rad-1, thick=5, flange=0){
 }
 
 module base_beam_mount_2(motor = false){
-    extra_height = 6;
+    extra_height = 3;
     height = -beam/2-y_beam_height;
     echo("WALLS");
     echo(wall);
     
-    axle_drop = -y_beam_height-beam/2-3-beam;
+    axle_drop = -y_beam_height-beam/2-3-beam-1;
     axle_offset = 13;
     
     length_beam = 11;
@@ -245,7 +245,7 @@ module base_beam_mount_2(motor = false){
         }
         
         //slots for the belts to pass through
-        translate([0,0,-axle_drop]) rotate([0,90,0]) for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,0]) cube([4,100,11], center=true);
+        translate([0,0,-axle_drop]) rotate([0,90,0]) for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,0]) cube([5.25,100,11], center=true);
             
         //endstop hole
         translate([-beam/2-wheel_rad+3,0,-height+beam+5]) endstop_hole();
@@ -268,6 +268,13 @@ module endstop_hole(){
         union(){
             //endstop
             translate([0,0,wall]) cube([thick, width,switch_height+wall], center=true);
+            
+            //chamfer the bottom
+            hull(){
+                translate([0,0,wall+2+switch_height/2]) cube([thick+3, width+3,1], center=true);
+                translate([0,0,wall+switch_height/2-1]) cube([thick, width,1], center=true);
+            }
+            
             //wire pass
             translate([-(thick-wire)/2,0,-.1]) cube([wire, width,switch_height+5], center=true);
         }
