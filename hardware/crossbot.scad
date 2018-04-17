@@ -14,7 +14,7 @@ m5_cap_rad = 11/2;
 
 //a simple, lightweight gantry system using two beams.
 
-part = 7;
+part = 8;
 
 $fn = 30;
 
@@ -192,7 +192,7 @@ module base_beam_mount_2(motor = false){
     echo("WALLS");
     echo(wall);
     
-    axle_drop = -y_beam_height-beam/2-3-beam-1;
+    axle_drop = -y_beam_height-beam/2-3-beam+3;
     axle_offset = 13;
     
     length_beam = 11;
