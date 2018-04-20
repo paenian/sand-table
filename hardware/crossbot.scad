@@ -237,15 +237,23 @@ module base_beam_mount_2(motor = false){
         }
         
         //attach to the beam
-        translate([0,0,-height+beam/2]) for(i=[0:1]) mirror([0,0,i]) translate([0,0,beam/2]) rotate([90,0,0]) {
-            cylinder(r=m5_rad+.25, h=50, center=true);
-            translate([0,0,0]) cylinder(r=m5_cap_rad+.25, h=50);
+        translate([0,0,-height+beam/2]) {
+            for(i=[0:1]) mirror([0,0,i]) translate([0,0,beam/2]) rotate([90,0,0]) {
+                cylinder(r=m5_rad+.25, h=50, center=true);
+                translate([0,0,0]) cylinder(r=m5_cap_rad+.25, h=50);
             
-            %cube([20,20,20], center=true);
+                %cube([20,20,20], center=true);
+            }
+            //this is the hole in the beam, for routing the belt
+            cube([17, 23, 5.5], center=true);
+            hull(){
+                for(i=[0,90]) rotate([0,i,0]) cube([6.25, 23, 12.5], center=true);
+            }
         }
         
+        
         //slots for the belts to pass through
-        translate([0,0,-axle_drop]) rotate([0,90,0]) for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,0]) cube([5.25,100,11], center=true);
+        translate([0,0,-axle_drop]) rotate([0,90,0]) for(i=[0:1]) mirror([i,0,0]) translate([pulley_rad,0,0]) cube([6.25,100,11], center=true);
             
         //endstop hole
         translate([-beam/2-wheel_rad+3,0,-height+beam+5]) endstop_hole();
