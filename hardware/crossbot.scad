@@ -159,7 +159,7 @@ module base_beam_mount(motor = false){
     }
 }
 
-module tension_roundel(rad = wheel_eff_rad-1, thick=5, flange=0){
+module tension_roundel(rad = wheel_eff_rad-2.2, thick=5, flange=0){
     difference(){
         union(){
             for(i=[0,1]) mirror([0,0,i]) translate([0,0,wall/2])
@@ -180,8 +180,8 @@ module tension_roundel(rad = wheel_eff_rad-1, thick=5, flange=0){
         cylinder(r=m5_rad+.25, h=thick*3, center=true);
         
         //zip tie slot
-        translate([rad*1.25,0,0]) scale([1,1,1.25]) rotate([90,0,0]) rotate_extrude(){
-            translate([5,0,0]) square([2,4], center=true); 
+        translate([rad*1.25,rad/3,0]) scale([1,1,1.15]) rotate([90,0,0]) rotate_extrude(){
+            translate([4.75,0,0]) square([1.75,3.5], center=true); 
         }
     }
 }
