@@ -14,7 +14,7 @@ m5_cap_rad = 11/2;
 
 //a simple, lightweight gantry system using two beams.
 
-part = 8;
+part = 11;
 
 $fn = 30;
 
@@ -668,24 +668,34 @@ module magnet_carriage_2(){
     wheel_sep = 43;
     difference(){
         union(){
-            translate([0,0,wall/2]) cube([60,30,wall], center=true);
+            //translate([0,0,wall/2]) cube([60,30,wall], center=true);
             
             //magnet mount
             translate([0,0,wall/2]) cylinder(r1=magnet_rad+wall*1.25, r2=magnet_rad+wall/2, h=magnet_height);
+            cylinder(r1=magnet_rad+wall, r2=magnet_rad+wall*1.25, h=wall/2+.05);
             
             //wheel supports
-            for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2, beam/2+wheel_eff_rad, 0]){
-                cylinder(r=wheel_eff_rad, h=wall);
+            for(i=[0,1]) mirror([i,0,0]) {
+                hull(){
+                    translate([wheel_sep/2, beam/2+wheel_eff_rad, 0]) cylinder(r=wheel_eff_rad-2, h=wall);
+                    cylinder(r1=magnet_rad-wall/2, r2=magnet_rad-wall, h=magnet_height+wall/2);
+                }
                 %translate([0,0,-beam/2]) wheel();
             }
-            translate([0, -beam/2-wheel_eff_rad, 0]){
-                cylinder(r=wheel_eff_rad, h=wall);
-                %translate([0,0,-beam/2]) wheel();
+            hull(){
+                translate([0, -beam/2-wheel_eff_rad, 0]){
+                    cylinder(r=wheel_eff_rad-2, h=wall);
+                    %translate([0,0,-beam/2]) wheel();
+                }
+                cylinder(r1=magnet_rad-wall/2, r2=magnet_rad-wall, h=magnet_height+wall/2);
             }
             
             //idlers
-            for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2, -beam/2-m5_rad-1, 0]){
-                cylinder(r=wheel_eff_rad, h=wall);
+            for(i=[0,1]) mirror([i,0,0]){
+                hull(){
+                     translate([wheel_sep/2+1, -beam/2-m5_rad-2, 0]) cylinder(r=wheel_eff_rad-3, h=wall);
+                     cylinder(r1=magnet_rad-wall/2, r2=magnet_rad-wall, h=magnet_height+wall/2);
+                }
             }
         }
         
@@ -693,21 +703,24 @@ module magnet_carriage_2(){
         translate([0,0,wall/2]) cylinder(r1=magnet_rad+.25, r2=magnet_rad+.5, h=magnet_height+1);
         
         //wheel holes
-        for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2, beam/2+wheel_eff_rad, 0]){
+        for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2, beam/2+wheel_eff_rad+.2, 0]){
             wheel(solid=-1);
+            translate([0,0,wall*2/3]) cylinder(r1=m5_nut_rad, r2=m5_nut_rad+2.5, h=50, $fn=6);
         }
-        translate([0, -beam/2-wheel_eff_rad, 0]){
+        translate([0, -beam/2-wheel_eff_rad-.2, 0]){
             wheel(solid=-1);
+            translate([0,0,wall*2/3]) cylinder(r1=m5_nut_rad, r2=m5_nut_rad+2.5, h=50, $fn=6);
         }
         
         //slots for wheel flex
-        for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2+wheel_eff_rad, beam/2+wheel_eff_rad/2, 0]){
-            rotate([0,0,19]) cube([wheel_rad*4-3,1.5,wall*3], center=true);
+        *for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2+wheel_eff_rad, beam/2+wheel_eff_rad/2, 0]){
+            rotate([0,0,19]) cube([wheel_rad*3,1.5,wall*5], center=true);
         }
         
         //idler holes
-        for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2, -beam/2-m5_rad-1, 0]){
+        for(i=[0,1]) mirror([i,0,0]) translate([wheel_sep/2+1, -beam/2-m5_rad-2, 0]){
             cylinder(r=m5_rad, h=wall*3, center=true);
+            translate([0,0,wall*2/3]) cylinder(r1=m5_nut_rad, r2=m5_nut_rad+2.5, h=50, $fn=6);
         }
     }
 }
