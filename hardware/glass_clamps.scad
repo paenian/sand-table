@@ -3,20 +3,22 @@ include <configuration.scad>
 wall = 5;
 
 clamp_width = m5_rad*2 + wall*1.5;
-clamp_height = 30;
+clamp_height = 26;
+clamp_length = 25;
 screw_sep = 13;
-screw_drop = 4;
+screw_drop = 3;
 clamp_screw_rad = 1.75;
 clamp_screw_cap_rad = 3.6;
-clamp_screw_cap_height = 2;
+clamp_screw_cap_height = 1;
+main_screw_offset = -1;
 
-translate([0,0,clamp_width/2]) rotate([0,90,0]) clamp_base();
+translate([0,0,clamp_width/2]) rotate([0,90,0]) clamp_base(num_screws = 1);
 
-translate([-8,-7,0]) rotate([0,0,90]) clamp_lever();
+translate([-8,-7,0]) rotate([0,0,90]) clamp_lever(clamp_length);
 
 $fn=36;
 
-module clamp_base(){
+module clamp_base(num_screws = 2){
     difference(){
         union(){
             //screw body
@@ -24,20 +26,34 @@ module clamp_base(){
                 translate([clamp_width/2,0,0]) cylinder(r=clamp_width/2, h=clamp_height);
                 translate([-clamp_width/2,0,clamp_height*2/3]) cylinder(r=clamp_width/2, h=clamp_height*1/3);
                 
-                for(i=[0,1]) mirror([0,i,0]) translate([clamp_width/2,screw_sep,clamp_height-clamp_width/2])
-                    rotate([0,-90,0]) cylinder(r=clamp_width/2, h=wall);
+                if(num_screws == 2){
+                    for(i=[0,1]) mirror([0,i,0]) translate([clamp_width/2,screw_sep,clamp_height-clamp_width/2])
+                        rotate([0,-90,0]) cylinder(r=clamp_width/2, h=wall);
+                }else{
+                    translate([clamp_width/2,0,clamp_height-clamp_width/2-screw_drop]) rotate([0,-90,0]) cylinder(r=clamp_width/2+screw_drop, h=wall);
+                }
             }
         }
         
         //hole for the clamp screw
-        cylinder(r=m5_rad, h=clamp_height*3, center=true);
-        rotate([0,0,30]) cylinder(r1=m5_nut_rad+.5, r2=m5_nut_rad-.1, h=clamp_height, center=true, $fn=6);
+        translate([main_screw_offset,0,0]) {
+            cylinder(r=m5_rad+.1, h=clamp_height*3, center=true);
+            translate([0,0,-screw_drop]) rotate([0,0,30]) cylinder(r1=m5_nut_rad+.5, r2=m5_nut_rad-.1, h=clamp_height, center=true, $fn=6);
+        }
         
         //mount holes to the side
-        for(i=[0,1]) mirror([0,i,0]) translate([0,screw_sep,clamp_height-clamp_width/2-screw_drop]) {
-            rotate([0,90,0]) translate([0,0,-.1]) cylinder(r=clamp_screw_rad, h=50, center=true);
-            translate([clamp_width/2-clamp_screw_cap_height,0,0]) rotate([0,-90,0]) cylinder(r1=clamp_screw_rad, r2=clamp_screw_cap_rad, h=clamp_screw_cap_height+.05);
-            translate([clamp_width/2-clamp_screw_cap_height,0,0]) rotate([0,-90,0]) translate([0,0,clamp_screw_cap_height]) cylinder(r=clamp_screw_cap_rad, h=50);
+        if(num_screws == 2){
+            for(i=[0,1]) mirror([0,i,0]) translate([0,screw_sep,clamp_height-clamp_width/2-screw_drop]) {
+                rotate([0,90,0]) translate([0,0,-.1]) cylinder(r=clamp_screw_rad, h=50, center=true);
+                translate([clamp_width/2-clamp_screw_cap_height,0,0]) rotate([0,-90,0]) cylinder(r1=clamp_screw_rad, r2=clamp_screw_cap_rad, h=clamp_screw_cap_height+.05);
+                translate([clamp_width/2-clamp_screw_cap_height,0,0]) rotate([0,-90,0]) translate([0,0,clamp_screw_cap_height]) cylinder(r=clamp_screw_cap_rad, h=50);
+            }
+        }else{
+            translate([0,0,clamp_height-clamp_width/2-screw_drop]) {
+                rotate([0,90,0]) translate([0,0,-.1]) cylinder(r=clamp_screw_rad, h=50, center=true);
+                translate([clamp_width/2-clamp_screw_cap_height,0,0]) rotate([0,-90,0]) cylinder(r1=clamp_screw_rad, r2=clamp_screw_cap_rad, h=clamp_screw_cap_height+.05);
+                translate([clamp_width/2-clamp_screw_cap_height,0,0]) rotate([0,-90,0]) translate([0,0,clamp_screw_cap_height]) cylinder(r=clamp_screw_cap_rad, h=50);
+            }
         }
         
         //v-top for aligning
@@ -71,6 +87,7 @@ module clamp_lever(length = 20){
         }
         
         //screwhole
+        translate([main_screw_offset,0,0])
         cylinder(r=m5_rad, h=clamp_height*3, center=true);
         
         //glass cutout
